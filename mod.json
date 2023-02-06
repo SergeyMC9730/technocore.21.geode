@@ -1,0 +1,9 @@
+{
+	"geode": "v1.0.0",
+	"version": "v1.0.0",
+	"id": "org.techno.21",
+	"name": "TechnoGDPS 2.1",
+	"developer": "dogotrigger",
+	"description": "This mod provides early 2.1 experience and adds ability to create players inside the game",
+	"binary": "techno.21"
+}
