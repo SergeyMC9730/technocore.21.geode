@@ -6,6 +6,7 @@
 #include <Geode/modify/PlayerObject.hpp>
 #include <Geode/modify/CreatorLayer.hpp>
 #include <Geode/modify/KeysLayer.hpp>
+#include <Geode/modify/EditorUI.hpp>
 #include "networking.h"
 
 #include <Geode/modify/MenuLayer.hpp>
@@ -20,19 +21,28 @@ USE_GEODE_NAMESPACE();
 
 using namespace cocos2d;
 
+namespace TechnoSettings {
+	bool release = false;
+}
+
 std::vector<PlayerObject *> player_list;
 bool isSetupComplete = false;
 
-void destroyPlayers() {
+void destroyPlayers(bool onScreen) {
+	if(onScreen) {
+		int i = 0;
+		while(i < player_list.size()) {
+			//player_list[i]->m_particleSystem->removeFromParentAndCleanup(true);
+			player_list[i]->removeMeAndCleanup();
+			i++;
+		}
+	}
 	player_list.clear();
 }
 void playPlayerDeathEffect(PlayerObject *pl) {
 	auto fade = CCFadeTo::create(0.05, 0);
-	printf( "created fade effect\n");
 	pl->runAction(fade);
-	printf( "fade effect is applied to %p\n", pl);
 	auto cw = CCCircleWave::create(1, 2, 3, false);
-	printf( "created CCCircleWave at %p\n", cw);
 	//CCNode *test = CCNode::create();
 	// if(PlayLayer::get()) PlayLayer::get()->m_objectLayer->addChild(cw);
 	// cw->setPosition(pl->getPosition());
@@ -40,31 +50,22 @@ void playPlayerDeathEffect(PlayerObject *pl) {
 void destroyPlayerByID(int id) {
 	// delete 3 (index 2)
 	//player_list[id]->playerDestroyed(false);
-	printf( "deleting player by id %d\n", id);
+	if(TechnoSettings::release == false) printf( "deleting player by id %d\n", id);
 	player_list[id]->fadeOutStreak2(0.2f);
-	printf( "streak disabled\n");
 	player_list[id]->stopDashing();
-	printf( "dashing disabled\n");
 	player_list[id]->stopRotation(false);
-	printf( "rotations are stopped\n");
 	player_list[id]->stopAllActions();
-	printf( "physics disabled\n");
 	playPlayerDeathEffect(player_list[id]);
-	printf( "cleaning up\n");
+	if(TechnoSettings::release == false) printf( "cleaning up\n");
 	player_list.erase(player_list.begin() + id);
 }
 void destroyPlayerByAddress(PlayerObject *addr) {
-	printf( "a\n");
 	int i = 0;
-	printf( "b\n", i);
 	int res = 0;
-	printf( "c\n", i);
 	while(i < player_list.size()) {
-		printf( "d\n", i);
 		if(addr == player_list[i]) {
-			printf( "destroying player %d\n", i);
 			destroyPlayerByID(i);
-			printf( "destroyed player %d\n", i);
+			if(TechnoSettings::release == false) printf( "destroyed player %d\n", i);
 			return;
 		}
 		i++;
@@ -75,6 +76,10 @@ void destroyPlayerByAddress(PlayerObject *addr) {
 class CreatePlayerTrigger : public GameObjectController {
  public:
 	CreatePlayerTrigger(GameObject* g) : GameObjectController(g) {}
+
+	static const char *getTexture() {
+		return "edit_ePCreateBtn_001.png";
+	}
 
 	// What happens when the object is "triggered"
 	void onTrigger(GJBaseGameLayer* gl) override {
@@ -94,22 +99,22 @@ class CreatePlayerTrigger : public GameObjectController {
 			LevelEditorLayer::get()->m_batchNodePlayer->addChild(po);
 		}
 		po->setPosition(this->getObject()->getPosition());
-		po->addAllParticles();
-		int particles = po->m_particleSystems->count();
-		int i = 0;
+		// po->addAllParticles();
+		// int particles = po->m_particleSystems->count();
+		// int i = 0;
 
-		while(i < particles) {
-			if(PlayLayer::get()) {
-				auto ccn = (CCNode *)(po->m_particleSystems->objectAtIndex(i));
-				ccn->setParent(PlayLayer::get()->m_objectLayer);
-				po->m_regularTrail->setParent(PlayLayer::get()->m_objectLayer);
-				po->m_waveTrail->setParent(PlayLayer::get()->m_objectLayer);
-				//po->m_particleSystem->setParent(PlayLayer::get()->m_objectLayer);
-			}
-			i++;
-		}
+		// while(i < particles) {
+		// 	if(PlayLayer::get()) {
+		// 		auto ccn = (CCNode *)(po->m_particleSystems->objectAtIndex(i));
+		// 		ccn->setParent(PlayLayer::get()->m_objectLayer);
+		// 		// po->m_regularTrail->setParent(PlayLayer::get()->m_objectLayer);
+		// 		// po->m_waveTrail->setParent(PlayLayer::get()->m_objectLayer);
+		// 		//po->m_particleSystem->setParent(PlayLayer::get()->m_objectLayer);
+		// 	}
+		// 	i++;
+		// }
 		player_list.push_back(po);
-		printf( "created player %d\n", player_list.size() - 1);
+		if(TechnoSettings::release == false) printf( "created player %d\n", player_list.size() - 1);
 	}
 
 	void setup() override {
@@ -117,17 +122,25 @@ class CreatePlayerTrigger : public GameObjectController {
 		m_glowEnabled = false;
 
 		// Set custom texture for this object
-		overrideSpriteFrame("block005_11_001.png");
+		overrideSpriteFrame(getTexture());
 
 		// Touch-triggered object with the Modifier type. This object will run onTrigger when collided with
 		m_object->m_touchTriggered = true;
 		m_object->m_objectType = GameObjectType::Modifier;
+
+		if(PlayLayer::get()) {
+			m_object->setVisible(false);
+		}
 	}
 };
 
 class DestroyPlayersTrigger : public GameObjectController {
  public:
 	DestroyPlayersTrigger(GameObject* g) : GameObjectController(g) {}
+
+	static const char *getTexture() {
+		return "edit_ePDestroyBtn_001.png";
+	}
 
 	// What happens when the object is "triggered"
 	void onTrigger(GJBaseGameLayer* gl) override {
@@ -144,11 +157,15 @@ class DestroyPlayersTrigger : public GameObjectController {
 		m_glowEnabled = false;
 
 		// Set custom texture for this object
-		overrideSpriteFrame("block005_12_001.png");
+		overrideSpriteFrame(getTexture());
 
 		// Touch-triggered object with the Modifier type. This object will run onTrigger when collided with
 		m_object->m_touchTriggered = true;
 		m_object->m_objectType = GameObjectType::Modifier;
+
+		if(PlayLayer::get()) {
+			m_object->setVisible(false);
+		}
 	}
 };
 
@@ -180,11 +197,11 @@ public:
 			i++;
 		}
 
-		printf("Players speed are set to %f\n", m_fSpeed);
+		if(TechnoSettings::release == false) printf("Players speed are set to %f\n", m_fSpeed);
 	}
 
 	void setup() override {
-		printf("setup portal %s\n", m_sFrame.c_str());
+		if(TechnoSettings::release == false) printf("setup portal %s\n", m_sFrame.c_str());
 		m_glowEnabled = true;
 		overrideSpriteFrame(m_sFrame);
 		m_object->m_touchTriggered = true;
@@ -218,15 +235,16 @@ class $modify(KeysLayer) {
 bool setupStuff() {
 	if(isSetupComplete) return false;
 
-	bool ac = AllocConsole();
-	if(!ac) return false;
-	freopen("conin$","r",stdin);
-	freopen("conout$","w",stdout);
-	freopen("conout$","w",stderr);
-	printf("Debugging Window:\n");
+	if(TechnoSettings::release == false) {
+		bool ac = AllocConsole();
+		if(!ac) return false;
+		freopen("conin$","r",stdin);
+		freopen("conout$","w",stdout);
+		freopen("conout$","w",stderr);
+	}
 
-	ObjectToolbox::sharedState()->addObject(10245, "block005_11_001.png");
-	ObjectToolbox::sharedState()->addObject(10246, "block005_12_001.png");
+	ObjectToolbox::sharedState()->addObject(10245, "edit_ePCreateBtn_001.png");
+	ObjectToolbox::sharedState()->addObject(10246, "edit_ePDestroyBtn_001.png");
 
 	GameObjectFactory::get()->add(10245, [](GameObject* g) {
 		return new CreatePlayerTrigger(g);
@@ -236,23 +254,18 @@ bool setupStuff() {
 	});
 
 	GameObjectFactory::get()->add(200, [](GameObject* g) {
-		printf("creating boost object\n");
 		return new BoostPortal(g, "boost_01_001.png", kTimeModSlow);
 	});
 	GameObjectFactory::get()->add(201, [](GameObject* g) {
-		printf("creating boost object\n");
 		return new BoostPortal(g, "boost_02_001.png", kTimeModNormal);
 	});
 	GameObjectFactory::get()->add(202, [](GameObject* g) {
-		printf("creating boost object\n");
 		return new BoostPortal(g, "boost_03_001.png", kTimeModFast);
 	});
 	GameObjectFactory::get()->add(203, [](GameObject* g) {
-		printf("creating boost object\n");
 		return new BoostPortal(g, "boost_04_001.png", kTimeModVeryFast);
 	});
 	GameObjectFactory::get()->add(1334, [](GameObject* g) {
-		printf("creating boost object\n");
 		return new BoostPortal(g, "boost_05_001.png", kTimeModVeryVeryFast);
 	});
 
@@ -263,7 +276,7 @@ void doPlayerJob(float delta) {
 	int i = 0;
 	while (i < player_list.size()) {
 		float dl = delta * 60.f;
-		printf("dl: %f; pspeed: %f; portal at %p\n", dl, player_list[i]->m_playerSpeed, GJBaseGameLayer::get()->m_player1->m_lastActivatedPortal);
+		//printf("dl: %f; pspeed: %f; portal at %p\n", dl, player_list[i]->m_playerSpeed, GJBaseGameLayer::get()->m_player1->m_lastActivatedPortal);
 		player_list[i]->update(dl);
 		if(player_list[i]->m_isShip) {
 			player_list[i]->updateShipRotation(dl);
@@ -300,7 +313,7 @@ class $modify(TPlayerObject, PlayerObject) {
 		m_fields->newSpeed = this->m_playerSpeed;
 		if(m_fields->newSpeed != m_fields->prevSpeed) {
 			m_fields->prevSpeed = m_fields->newSpeed;
-			printf("speed: %f\n", this->m_playerSpeed);
+			if(TechnoSettings::release == false) printf("speed: %f\n", this->m_playerSpeed);
 		}
 		PlayerObject::update(delta);
 	}
@@ -308,25 +321,25 @@ class $modify(TPlayerObject, PlayerObject) {
 		int i = 0;
 
 		if(PlayLayer::get()) {
-			printf( "Player %p died (%p %p)\n", this, PlayLayer::get()->m_player1,  PlayLayer::get()->m_player2);
+			if(TechnoSettings::release == false) printf( "Player %p died (%p %p)\n", this, PlayLayer::get()->m_player1,  PlayLayer::get()->m_player2);
 
 			if((this == PlayLayer::get()->m_player1) || (this == PlayLayer::get()->m_player2)) {
-				printf( "main player, using standard function\n");
+				if(TechnoSettings::release == false) printf( "main player, using standard function\n");
 				PlayerObject::playerDestroyed(p0);
 				goto end;
 			} else {
-				printf("dummy player, using custom death code\n");
+				if(TechnoSettings::release == false) printf("dummy player, using custom death code\n");
 				destroyPlayerByAddress(this);
 				goto end;
 			}
 		}
 		skip:
-		printf("death skipped, using standard function + custom code\n");
+		if(TechnoSettings::release == false) printf("death skipped, using standard function + custom code\n");
 		PlayerObject::playerDestroyed(p0);
-		printf( "destroyed main player\n");
+		if(TechnoSettings::release == false) printf( "destroyed main player\n");
 		while(i < player_list.size()) {
 			destroyPlayerByID(i);
-			printf( "destroyed dummy player %d\n", i);
+			if(TechnoSettings::release == false) printf( "destroyed dummy player %d\n", i);
 			i++;
 		}
 		end:
@@ -344,8 +357,8 @@ class $modify(TPlayerObject, PlayerObject) {
 
 class $modify(LevelEditorLayer) {
 	bool init(GJGameLevel *level) {
-		destroyPlayers();
-		printf( "player list is cleaned up\n");
+		destroyPlayers(false);
+		if(TechnoSettings::release == false) printf( "player list is cleaned up\n");
 
 		return LevelEditorLayer::init(level);
 	}
@@ -357,8 +370,8 @@ class $modify(LevelEditorLayer) {
 
 class $modify(TPlayLayer, PlayLayer) {
 	bool init(GJGameLevel *p0) {
-		destroyPlayers();
-		printf( "player list is cleaned up\n");
+		destroyPlayers(false);
+		if(TechnoSettings::release == false) printf( "player list is cleaned up\n");
 
 		return PlayLayer::init(p0);
 	}
@@ -440,6 +453,9 @@ class $modify(CreatorLayer) {
 };
 
 class $modify(TEditorUI, EditorUI) {
+	CCMenuItemSpriteExtra *add10245;
+	CCMenuItemSpriteExtra *add10246;
+
 	void on1024(CCObject *sender) {
 		EditorUI *eui = (EditorUI *)sender;
 
@@ -453,6 +469,13 @@ class $modify(TEditorUI, EditorUI) {
 		lel->getObjectLayer()->addChild(lel->createObject(10246, ccp(rand() % 50 + 100, rand() % 50 + 100), false));
 	}
 
+	void onPause(CCObject *sender) {
+		EditorUI::onPause(sender);
+
+		m_fields->add10245->setVisible(true);
+		m_fields->add10246->setVisible(true);
+	}
+
 	void onStopPlaytest(cocos2d::CCObject* sender) {
 		EditorUI::onStopPlaytest(sender);
 
@@ -462,30 +485,56 @@ class $modify(TEditorUI, EditorUI) {
 			destroyPlayerByID(i);
 			i++;
 		}
-		destroyPlayers();
-		printf( "player list is cleaned up\n");
+		destroyPlayers(true);
+		if(TechnoSettings::release == false) printf( "player list is cleaned up\n");
+		
+		m_fields->add10245->setVisible(true);
+		m_fields->add10246->setVisible(true);
 	}
-	bool init(LevelEditorLayer *ll) {
-		EditorUI::init(ll);
+	void onPlaytest(cocos2d::CCObject *sender) {
+		EditorUI::onPlaytest(sender);
 
-		auto menu = CCMenu::create();
+		m_fields->add10245->setVisible(false);
+		m_fields->add10246->setVisible(false);
+	}
+	bool init(LevelEditorLayer *l0) {
+		if(!EditorUI::init(l0)) return false;
 
-        auto spr = ButtonSprite::create("add obj 10245");
-		auto spr2 = ButtonSprite::create("add obj 10246");
+        // auto spr = ButtonSprite::create("add obj 10245");
+		// auto spr2 = ButtonSprite::create("add obj 10246");
+		const char *a = CreatePlayerTrigger::getTexture();
+		const char *b = DestroyPlayersTrigger::getTexture();
+
+		auto cache = cocos2d::CCSpriteFrameCache::sharedSpriteFrameCache();
+
+		auto spr0 = CCSprite::createWithSpriteFrame(cache->spriteFrameByName(a));
+		auto spr1 = CCSprite::createWithSpriteFrame(cache->spriteFrameByName(b));
+
+		auto gjb = CCSprite::create("GJ_button_05.png");
+		gjb->setScale(0.75);
 
         auto btn = CCMenuItemSpriteExtra::create(
-            spr, this, menu_selector(TEditorUI::on1024)
+            gjb, this, menu_selector(TEditorUI::on1024)
         );
 		auto btn2 = CCMenuItemSpriteExtra::create(
-            spr2, this, menu_selector(TEditorUI::on1025)
+            gjb, this, menu_selector(TEditorUI::on1025)
         );
-		btn2->setPositionY(50);
-        menu->addChild(btn);
-		menu->addChild(btn2);
+		spr0->setPosition({15.f, 15.5f});
+		spr1->setPosition({15.f, 15.5f});
+		spr0->setScale(0.91875f);
+		spr1->setScale(0.91875f);
+		btn->addChild(spr0);
+		btn2->addChild(spr1);
+		btn->setPosition(108.f, -234.f);
+		btn2->setPosition(108.f, -274.f);
 
-		menu->setPosition(100, 100);
+		CCMenu *topLeftMenu = dynamic_cast<CCMenu *>(getChildByID("top-left-menu"));
 
-		LevelEditorLayer::get()->getObjectLayer()->addChild(menu);
+		topLeftMenu->addChild(btn);
+		topLeftMenu->addChild(btn2);
+
+		m_fields->add10245 = btn;
+		m_fields->add10246 = btn2;
 
 		return true;
 	}
@@ -549,7 +598,7 @@ class $modify(TMenuLayer, MenuLayer) {
 
 		CCSize winSize = CCDirector::sharedDirector()->getWinSize();
 
-		auto tch = CCLabelBMFont::create("TechnoGDPS BETA BUILD 1.0", "bigFont.fnt");
+		auto tch = CCLabelBMFont::create((TechnoSettings::release == false) ? "TechnoGDPS BETA BUILD 1.0" : "TechnoGDPS RELEASE 1.0", "bigFont.fnt");
 		tch->setPositionY(300);
 		tch->setPositionX(winSize.width / 2);
 		tch->setScale(.375f);
