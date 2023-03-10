@@ -4,9 +4,9 @@
 	"id": "org.techno.21",
 	"name": "TechnoGDPS 2.1",
 	"developer": "dogotrigger",
-	"repository": "https://github.com/SergeyMC9730/techno.21.geode",
+	"repository": "https://github.com/SergeyMC9730/technocore.21.geode",
 	"issues": {
-		"url": "https://github.com/SergeyMC9730/techno.21.geode/issues",
+		"url": "https://github.com/SergeyMC9730/technocore.21.geode/issues",
 		"info": "Any bugs with technogdps mod should be reported here"
 	},
 	"description": "This mod provides early 2.1 experience and adds ability to create players inside the game",

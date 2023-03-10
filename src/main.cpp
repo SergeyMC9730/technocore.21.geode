@@ -411,74 +411,14 @@ void doPlayerJob(float delta) {
 	}
 }
 
-// class $modify(LevelTools) {
-//     static const char* getAudioTitle(int aid) {
-//         switch(aid) {
-//             case 22: {
-//                 return "Time Machine 2";
-//             }
-//             default: {
-//                 return LevelTools::getAudioTitle(this, aid);
-//             }
-//         }
-//     }
-
-//     static const char* getArtistForAudio(int aid) {
-//         switch(aid) {
-//             case 22: {
-//                 return LevelTools::getArtistForAudio(this, 1);
-//             }
-//             default: {
-//                 return LevelTools::getArtistForAudio(this, aid);
-//             }
-//         }
-//     }
-
-//     // https://www.youtube.com/watch?v=awCuqziUpFA
-//     static const char* getURLForAudio(int aid) {
-//         switch(aid) {
-//             case 22: {
-//                 return "https://www.youtube.com/watch?v=awCuqziUpFA";
-//             }
-//             default: {
-//                 return LevelTools::getURLForAudio(this, aid);
-//             }
-//         }
-//     }
-    
-//     const char* getAudioFilename(int aid) {
-//         switch(aid) {
-//             case 22: {
-//                 return "TimeMachine2.mp3";
-//             }
-//             default: {
-//                 return LevelTools::getAudioFilename(this, aid);
-//             }
-//         }
-//     }
-
-//     bool verifyLevelIntegrity(gd::string idk, int lid) {
-//         return true;
-//     }
-
-//     GJGameLevel* getLevel(int lid, bool idk) {
-//         if (lid == 22) {
-//             GJGameLevel* lvl = GJGameLevel::create();
-//             int sid = lid - 1;
-//             lvl->m_levelID = 22;
-//             lvl->m_audioTrack = sid;
-//             lvl->m_stars = 13;
-//             //lvl->m_difficulty = 5;
-//             lvl->m_coins = 0;
-//             lvl->m_capacityString = "29_317_29_40_29_29_177_98_29_29_177_132_98_29_29_29";
-//             lvl->m_orbCompletion = 325;
-//             lvl->m_levelName = "Time Machine 2";
-//             return lvl;
-//         } else {
-//             return LevelTools::getLevel(lid, false);
-//         }
-//     }
-// };
+class $modify(LevelTools) {
+    static bool verifyLevelIntegrity(gd::string idk, int lid) {
+		if(!TechnoSettings::release) {
+			printf("warn: level would be forced to be loaded\n");
+		}
+        return true;
+    }
+};
 
 bool ISGDH = false;
 
@@ -847,7 +787,6 @@ class $modify(TEditorUI, EditorUI) {
 	}
 	bool init(LevelEditorLayer *l0) {
 		if(!EditorUI::init(l0)) return false;
-		m_fields->
 
         // auto spr = ButtonSprite::create("add obj 10245");
 		// auto spr2 = ButtonSprite::create("add obj 10246");

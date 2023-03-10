@@ -100,11 +100,13 @@ class $modify(GameObjectHook, GameObject) {
 	}
 };
 
-class $modify(GJBaseGameLayer) {
+namespace StandardBaseGame {
 	CCDictionaryExt<int, CCNode> m_effectLayerMap;
+}
 
+class $modify(GJBaseGameLayer) {
 	CCNode* parentForZLayer(int zLayer, bool detailChannel, int batchLayer) {
-		auto elm = m_fields->m_effectLayerMap;
+		auto elm = StandardBaseGame::m_effectLayerMap;
 
 		if (batchLayer == -2) { // -2 is the effect layer
 		    if (elm.size() == 0) {
@@ -119,6 +121,11 @@ class $modify(GJBaseGameLayer) {
 		} else {
 		    return GJBaseGameLayer::parentForZLayer(zLayer, detailChannel, batchLayer);
 		}
+	}
+	bool init() {
+		StandardBaseGame::m_effectLayerMap = CCDictionary::create();
+
+		return GJBaseGameLayer::init();
 	}
 };
 
