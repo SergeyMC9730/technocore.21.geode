@@ -11,6 +11,8 @@ file(GLOB SOURCES
 	src/*.cpp
 )
 
+add_subdirectory(curl)
+
 # Set up the mod binary
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
@@ -23,5 +25,5 @@ endif()
 set(GEODE_LINK_SOURCE On)
 add_subdirectory($ENV{GEODE_SDK} $ENV{GEODE_SDK}/build)
 
-target_link_libraries(${PROJECT_NAME} geode-sdk)
+target_link_libraries(${PROJECT_NAME} geode-sdk libcurl)
 create_geode_file(${PROJECT_NAME})

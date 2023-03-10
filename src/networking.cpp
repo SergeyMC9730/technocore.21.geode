@@ -1,5 +1,11 @@
 #include "networking.h"
 
+#include <curl/curl.h>
+
+#define USABLE_STRING gd::string
+
+
+
 bool LoadingCircleLayer::init() {
     m_pCircle = CCSprite::create("loadingCircle.png");
     this->addChild(m_pCircle);
@@ -40,13 +46,28 @@ bool SimpleHTTPRequestLayer::init() {
     return true;
 }
 
+void SimpleHTTPRequestLayer::setReferer(const char *url) {
+    m_pReferer = url;
+    
+}
+
 void SimpleHTTPRequestLayer::start(const char *url, SEL_HttpResponse callback) {
     CCHttpClient *cl = CCHttpClient::getInstance();
     CCHttpRequest *req = new CCHttpRequest;
     req->setRequestType(CCHttpRequest::HttpRequestType::kHttpPost);
+    if(m_pReferer) {
+        printf("using referer %s\n", m_pReferer);
+        std::string str = "Referer: ";
+        str += m_pReferer;
+        req->setHeaders({str});
+    }
     req->setUrl(url);
     req->setResponseCallback(this, callback);
     cl->send(req);
+}
+void SimpleHTTPRequestLayer::start(const char *url, SEL_HttpResponse callback, CCObject *obj2) {
+    start(url, callback);
+    m_pObj2 = obj2;
 }
 
 void SimpleHTTPRequestLayer::close() {

@@ -1,0 +1,140 @@
+{
+    "settings": {
+        "levelCount": 22,
+        "deleteDemonLocks": 1
+    },
+    "levels": [
+        {
+            "name": "Stereo Madness",
+            "difficulty": 1,
+            "stars": 1,
+            "song": "StereoMadness.mp3"
+        },
+        {
+            "name": "Back on Track",
+            "difficulty": 1,
+            "stars": 2,
+            "song": "BackOnTrack.mp3"
+        },
+        {
+            "name": "Polargeist",
+            "difficulty": 2,
+            "stars": 3,
+            "song": "Polargeist.mp3"
+        },
+        {
+            "name": "Dry Out",
+            "difficulty": 2,
+            "stars": 4,
+            "song": "DryOut.mp3"
+        },
+        {
+            "name": "Base After Base",
+            "difficulty": 3,
+            "stars": 5,
+            "song": "BaseAfterBase.mp3"
+        },
+        {
+            "name": "Cant Let Go",
+            "difficulty": 3,
+            "stars": 6,
+            "song": "CantLetGo.mp3"
+        },
+        {
+            "name": "Jumper",
+            "difficulty": 4,
+            "stars": 7,
+            "song": "Jumper.mp3"
+        },
+        {
+            "name": "Time Machine",
+            "difficulty": 4,
+            "stars": 8,
+            "song": "TimeMachine.mp3"
+        },
+        {
+            "name": "Cycles",
+            "difficulty": 4,
+            "stars": 9,
+            "song": "Cycles.mp3"
+        },
+        {
+            "name": "xStep",
+            "difficulty": 5,
+            "stars": 10,
+            "song": "xStep.mp3"
+        },
+        {
+            "name": "Clutterfunk",
+            "difficulty": 5,
+            "stars": 10,
+            "song": "Clutterfunk.mp3"
+        },
+        {
+            "name": "Theory of Everything",
+            "difficulty": 5,
+            "stars": 10,
+            "song": "TheoryOfEverything.mp3"
+        },
+        {
+            "name": "Electroman Adventures",
+            "difficulty": 5,
+            "stars": 10,
+            "song": "Electroman.mp3"
+        },
+        {
+            "name": "Clubstep",
+            "difficulty": 6,
+            "stars": 14,
+            "song": "Clubstep.mp3"
+        },
+        {
+            "name": "Electrodynamix",
+            "difficulty": 5,
+            "stars": 12,
+            "song": "Electrodynamix.mp3"
+        },
+        {
+            "name": "Hexagon Force",
+            "difficulty": 5,
+            "stars": 12,
+            "song": "HexagonForce.mp3"
+        },
+        {
+            "name": "Blast Processing",
+            "difficulty": 4,
+            "stars": 10,
+            "song": "BlastProcess.mp3"
+        },
+        {
+            "name": "Theory of Everything 2",
+            "difficulty": 6,
+            "stars": 14,
+            "song": "TheoryOfEverything2.mp3"
+        },
+        {
+            "name": "Geometrical Dominator",
+            "difficulty": 4,
+            "stars": 10,
+            "song": "GeometricalDominator.mp3"
+        },
+        {
+            "name": "Deadlocked",
+            "difficulty": 6,
+            "stars": 15,
+            "song": "Deadlocked.mp3"
+        },
+        {
+            "name": "Fingerdash",
+            "difficulty": 5,
+            "stars": 12,
+            "song": "Fingerdash.mp3"
+        },
+        {
+            "name": "Time Machine 2",
+            "difficulty": 5,
+            "stars": 12,
+            "song": "TimeMachine2.mp3"
+        }
+    ]
+}

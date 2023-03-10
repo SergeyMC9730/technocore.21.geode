@@ -7,6 +7,9 @@
 #include <Geode/modify/CreatorLayer.hpp>
 #include <Geode/modify/KeysLayer.hpp>
 #include <Geode/modify/EditorUI.hpp>
+#include <Geode/modify/LevelBrowserLayer.hpp>
+#include <Geode/utils/web.hpp>
+#include <Geode/modify/LevelSearchLayer.hpp>
 #include "networking.h"
 
 #include <Geode/modify/MenuLayer.hpp>
@@ -27,6 +30,112 @@ namespace TechnoSettings {
 
 std::vector<PlayerObject *> player_list;
 bool isSetupComplete = false;
+
+namespace AnabanLevels {
+	class AnabanLevel : public CCObject {
+	public:
+		GJGameLevel *m_pLevel;
+		int m_nId;
+
+		AnabanLevel(GJGameLevel *level, int id) : m_pLevel(level), m_nId(id) {
+			this->autorelease();
+		}
+
+		void setLID(int id) {
+			m_nId = id;
+		}
+		void setLevel(GJGameLevel *level) {
+			m_pLevel = level;
+		}
+	};
+
+	GJGameLevel *levels[8] = {0};
+	int levelids[8] = {23079417, 23916625};
+	CCArray *levels2;
+
+	GJGameLevel *l0;
+	GJGameLevel *l1;
+
+	void init() {
+		l0 = GJGameLevel::create();
+		l0->m_levelName = "u suk 105359";
+		l0->m_levelDesc = "Release 2.1 already RubNum";
+		l0->m_levelString = "";
+		l0->m_creatorName = "anaban";
+		l0->m_recordString = "";
+		l0->m_userID = 18348456;
+		l0->m_accountID = 5375519;
+		l0->m_fastEditorZoom = 1.0f;
+		l0->m_isEditable = true;
+		l0->m_workingTime2 = 1;
+		l0->m_workingTime = 1;
+		l0->m_isVerified = 1;
+		l0->m_isVerifiedRaw = true;
+		l0->m_isUploaded = true;
+		l0->m_isUnlocked = true;
+		l0->m_levelVersion = 69;
+		l0->m_isChkValid = true;
+		l0->m_isCompletionLegitimate = true;
+		l0->m_levelLength = 05;
+		l0->m_songID = 1337;
+		l0->m_dislikes = 0;
+		l0->m_coins = 0;
+		l0->m_downloads = 0;
+		l0->m_gameVersion = 20;
+		l0->m_starsRequested = 69;
+		l0->m_levelID = 23079417;
+		l0->m_levelType = GJLevelType::Saved;
+		l0->m_M_ID = 23079417;
+		l0->m_levelNotDownloaded = false;
+
+		l1 = GJGameLevel::create();
+		l1->m_levelName = "??? 98624";
+		l1->m_levelDesc = "??\n\n";
+		l1->m_levelString = "";
+		l1->m_creatorName = "anaban";
+		l1->m_recordString = "";
+		l1->m_userID = 18348456;
+		l1->m_accountID = 5375519;
+		l1->m_fastEditorZoom = 1.0f;
+		l1->m_isEditable = true;
+		l1->m_workingTime2 = 1;
+		l1->m_starsRequested = 13;
+		l1->m_workingTime = 1;
+		l1->m_isVerified = 1;
+		l1->m_isVerifiedRaw = true;
+		l1->m_isUploaded = true;
+		l1->m_isUnlocked = true;
+		l1->m_levelVersion = 13;
+		l1->m_isChkValid = true;
+		l1->m_isCompletionLegitimate = true;
+		l1->m_levelLength = 05;
+		l1->m_songID = 1337;
+		l1->m_dislikes = 0;
+		l1->m_coins = 0;
+		l1->m_downloads = 0;
+		l1->m_gameVersion = 20;
+		l1->m_levelID = 23916625;
+		l1->m_levelType = GJLevelType::Saved;
+		l1->m_M_ID = 23916625;
+		l1->m_levelNotDownloaded = false;
+
+		levels2 = CCArray::create(l0, l1, nullptr);
+
+		levels[0] = l0;
+		levels[1] = l1;
+	}
+
+	GJGameLevel *findByID(int id) {
+		int i = 0;
+		while(i < 2) {
+			GJGameLevel *l = levels[i];
+			printf("%d %d %d\n", levelids[i], id, i);
+			if(levelids[i] == id) return l;
+			i++;
+		}
+		return nullptr;
+	}
+}
 
 void destroyPlayers(bool onScreen) {
 	if(onScreen) {
@@ -268,6 +377,8 @@ bool setupStuff() {
 	GameObjectFactory::get()->add(1334, [](GameObject* g) {
 		return new BoostPortal(g, "boost_05_001.png", kTimeModVeryVeryFast);
 	});
+	
+	AnabanLevels::init();
 
 	return true;
 }
@@ -276,7 +387,7 @@ void doPlayerJob(float delta) {
 	int i = 0;
 	while (i < player_list.size()) {
 		float dl = delta * 60.f;
-		//printf("dl: %f; pspeed: %f; portal at %p\n", dl, player_list[i]->m_playerSpeed, GJBaseGameLayer::get()->m_player1->m_lastActivatedPortal);
+		printf("dl: %f; pspeed: %f; portal at %p\n", dl, player_list[i]->m_playerSpeed, GJBaseGameLayer::get()->m_player1->m_lastActivatedPortal);
 		player_list[i]->update(dl);
 		if(player_list[i]->m_isShip) {
 			player_list[i]->updateShipRotation(dl);
@@ -286,7 +397,6 @@ void doPlayerJob(float delta) {
 			player_list[i]->updateRotation(dl);
 		}
 		player_list[i]->updateRobotAnimationSpeed();
-		player_list[i]->updateOrientedBox();
 		player_list[i]->updateJump(0);
 		player_list[i]->updatePlayerFrame(0);
 		player_list[i]->updatePlayerFrame(1);
@@ -301,20 +411,260 @@ void doPlayerJob(float delta) {
 	}
 }
 
+// class $modify(LevelTools) {
+//     static const char* getAudioTitle(int aid) {
+//         switch(aid) {
+//             case 22: {
+//                 return "Time Machine 2";
+//             }
+//             default: {
+//                 return LevelTools::getAudioTitle(this, aid);
+//             }
+//         }
+//     }
+
+//     static const char* getArtistForAudio(int aid) {
+//         switch(aid) {
+//             case 22: {
+//                 return LevelTools::getArtistForAudio(this, 1);
+//             }
+//             default: {
+//                 return LevelTools::getArtistForAudio(this, aid);
+//             }
+//         }
+//     }
+
+//     // https://www.youtube.com/watch?v=awCuqziUpFA
+//     static const char* getURLForAudio(int aid) {
+//         switch(aid) {
+//             case 22: {
+//                 return "https://www.youtube.com/watch?v=awCuqziUpFA";
+//             }
+//             default: {
+//                 return LevelTools::getURLForAudio(this, aid);
+//             }
+//         }
+//     }
+    
+//     const char* getAudioFilename(int aid) {
+//         switch(aid) {
+//             case 22: {
+//                 return "TimeMachine2.mp3";
+//             }
+//             default: {
+//                 return LevelTools::getAudioFilename(this, aid);
+//             }
+//         }
+//     }
+
+//     bool verifyLevelIntegrity(gd::string idk, int lid) {
+//         return true;
+//     }
+
+//     GJGameLevel* getLevel(int lid, bool idk) {
+//         if (lid == 22) {
+//             GJGameLevel* lvl = GJGameLevel::create();
+//             int sid = lid - 1;
+//             lvl->m_levelID = 22;
+//             lvl->m_audioTrack = sid;
+//             lvl->m_stars = 13;
+//             //lvl->m_difficulty = 5;
+//             lvl->m_coins = 0;
+//             lvl->m_capacityString = "29_317_29_40_29_29_177_98_29_29_177_132_98_29_29_29";
+//             lvl->m_orbCompletion = 325;
+//             lvl->m_levelName = "Time Machine 2";
+//             return lvl;
+//         } else {
+//             return LevelTools::getLevel(lid, false);
+//         }
+//     }
+// };
+
+bool ISGDH = false;
+
+class $modify(TLevelSearchLayer, LevelSearchLayer) {
+	bool useGDH = false;
+	CCSprite *enabledGDH;
+	CCSprite *disabledGDH;
+
+	CCMenuItemToggler *spr;
+
+	void setGDHistoryButton(CCObject *obj) {
+		auto l = reinterpret_cast<TLevelSearchLayer *>(obj);
+
+		l->m_fields->useGDH = !l->m_fields->useGDH;
+		ISGDH = l->m_fields->useGDH;
+
+		if(!TechnoSettings::release) {
+			printf("state is set to %d\n", l->m_fields->useGDH);
+		}
+	}
+
+	bool init() {
+		ISGDH = false;
+
+		if(!LevelSearchLayer::init()) return false;
+
+		m_fields->enabledGDH = CCSprite::createWithSpriteFrameName("controllerBtn_A_001.png");
+		m_fields->disabledGDH = CCSprite::createWithSpriteFrameName("controllerBtn_B_001.png");
+
+		auto menu = CCMenu::create();
+
+		// spr->initWithNormalSprite(enabledGDHsabledGDH, disabledGDH, this, menu_selector(TLevelSearchLayer::setGDHistoryButton));, di
+		//m_fields->spr = CCMenuItemSprite::create(m_fields->enabledGDH, m_fields->disabledGDH, m_fields->disabledGDH, menu_selector(TLevelSearchLayer::setGDHistoryButton));
+		// m_fields->spr = CCMenuItemSpriteExtra::create(m_fields->enabledGDH, this, menu_selector(TLevelSearchLayer::setGDHistoryButton));
+		CCMenuItemToggler* ch1_box = CCMenuItemToggler::create(m_fields->disabledGDH, m_fields->enabledGDH, this, menu_selector(TLevelSearchLayer::setGDHistoryButton));
+		m_fields->spr = ch1_box;
+
+		menu->addChild(m_fields->spr);
+		menu->setPosition({50, 50});
+
+		//this->addChild(menu);
+
+		return true;
+	}
+};
+
+class $modify(TLevelBrowserLayer, LevelBrowserLayer) {
+	int m_nLevelID;
+	CCArray *m_pArray;
+
+	bool isCorrect(const char *idk) {
+		return true;
+	}
+
+	void requestComplete(CCHttpClient* client, CCHttpResponse* response) {
+		SimpleHTTPRequestLayer *a = (SimpleHTTPRequestLayer *)response->getHttpRequest()->getTarget();
+		TLevelBrowserLayer *lb = (TLevelBrowserLayer *)a->m_pObj2;
+		a->close();
+
+		printf("succeed: %d\n", response->isSucceed());
+
+		if(!response->isSucceed()) {
+			const char *err = response->getErrorBuffer();
+			printf("%d %s %s\n", response->getResponseCode(), response->getResponseData()->data(), err);
+		} else {
+			printf("%s");
+		}
+
+		CCArray *arr;
+
+		auto l0 = GJGameLevel::create();
+		l0->m_levelName = "u suk 105359";
+		l0->m_levelDesc = "Release 2.1 already RubNum";
+		l0->m_levelString = "";
+		l0->m_creatorName = "anaban";
+		l0->m_recordString = "";
+		l0->m_userID = 18348456;
+		l0->m_accountID = 5375519;
+		l0->m_fastEditorZoom = 1.0f;
+		l0->m_isEditable = true;
+		l0->m_workingTime2 = 1;
+		l0->m_workingTime = 1;
+		l0->m_isVerified = 1;
+		l0->m_isVerifiedRaw = true;
+		l0->m_isUploaded = true;
+		l0->m_isUnlocked = true;
+		l0->m_levelVersion = 69;
+		l0->m_isChkValid = true;
+		l0->m_isCompletionLegitimate = true;
+		l0->m_levelLength = 05;
+		l0->m_songID = 1337;
+		l0->m_dislikes = 0;
+		l0->m_coins = 0;
+		l0->m_downloads = 0;
+		l0->m_gameVersion = 20;
+		l0->m_starsRequested = 69;
+		l0->m_levelID = 23079417;
+		l0->m_levelType = GJLevelType::Saved;
+		l0->m_M_ID = 23079417;
+		l0->m_levelNotDownloaded = false;
+
+		auto l1 = GJGameLevel::create();
+		l1->m_levelName = "??? 98624";
+		l1->m_levelDesc = "??\n\n";
+		l1->m_levelString = "";
+		l1->m_creatorName = "anaban";
+		l1->m_recordString = "";
+		l1->m_userID = 18348456;
+		l1->m_accountID = 5375519;
+		l1->m_fastEditorZoom = 1.0f;
+		l1->m_isEditable = true;
+		l1->m_workingTime2 = 1;
+		l1->m_starsRequested = 13;
+		l1->m_workingTime = 1;
+		l1->m_isVerified = 1;
+		l1->m_isVerifiedRaw = true;
+		l1->m_isUploaded = true;
+		l1->m_isUnlocked = true;
+		l1->m_levelVersion = 13;
+		l1->m_isChkValid = true;
+		l1->m_isCompletionLegitimate = true;
+		l1->m_levelLength = 05;
+		l1->m_songID = 1337;
+		l1->m_dislikes = 0;
+		l1->m_coins = 0;
+		l1->m_downloads = 0;
+		l1->m_gameVersion = 20;
+		l1->m_levelID = 23916625;
+		l1->m_levelType = GJLevelType::Saved;
+		l1->m_M_ID = 23916625;
+		l1->m_levelNotDownloaded = false;
+
+		arr = CCArray::create(l0, l1, nullptr);
+
+		lb->m_itemCount = 2;
+		lb->m_pageStartIdx = 1;
+		lb->m_pageEndIdx = 1;
+		lb->setupLevelBrowser(arr);
+		char *p0 = (char *)lb;
+		char *p1 = (char *)&lb->m_pageEndIdx;
+		printf("offset = %d\n", p1 - p0);
+		//lb->loadingLevelsFinished(arr, "123");
+
+		ISGDH = false;
+	}
+
+	void loadPage(GJSearchObject *obj) {
+		printf("hook 1\n");
+		int levelid = 0;
+		if(!ISGDH) {
+			LevelBrowserLayer::loadPage(obj);
+			return;
+		}
+		levelid = std::atoi(obj->m_searchQuery.c_str());
+		printf("levelid: %d\n", levelid);
+
+		CCArray *arr = CCArray::create();
+
+		LoadingCircleLayer *cl = LoadingCircleLayer::create();
+		//setupLevelBrowser(arr);
+
+		std::string str = "";
+		str = "https://history.geometrydash.eu/api/v1/level/";
+		str += std::to_string(levelid);
+		str += "/";
+
+		m_fields->m_nLevelID = levelid;
+		m_fields->m_pArray = arr;
+
+		printf("request: %s\n", str.c_str());
+
+		SimpleHTTPRequestLayer *a = SimpleHTTPRequestLayer::create();
+		a->setReferer("https://history.geometrydash.eu/");
+		a->start(str.c_str(), httpresponse_selector(TLevelBrowserLayer::requestComplete), this);
+		auto winSize = CCDirector::sharedDirector()->getWinSize();
+		cl->setPosition({winSize.width / 2, winSize.height / 2});
+		addChild(a, 100);
+	}
+};
+
 bool mainPlayerDied = false;
 bool shouldSchedule = false;
 bool isCompeletedLVL = false;
 
 class $modify(TPlayerObject, PlayerObject) {
-	float prevSpeed = 0.f;
-	float newSpeed = 0.f;
-
 	void update(float delta) {
-		m_fields->newSpeed = this->m_playerSpeed;
-		if(m_fields->newSpeed != m_fields->prevSpeed) {
-			m_fields->prevSpeed = m_fields->newSpeed;
-			if(TechnoSettings::release == false) printf("speed: %f\n", this->m_playerSpeed);
-		}
 		PlayerObject::update(delta);
 	}
 	void playerDestroyed(bool p0) {
@@ -452,19 +802,17 @@ class $modify(CreatorLayer) {
 	}
 };
 
-class $modify(TEditorUI, EditorUI) {
+namespace TechnoEditorUI {
 	CCMenuItemSpriteExtra *add10245;
 	CCMenuItemSpriteExtra *add10246;
+};
 
+class $modify(TEditorUI, EditorUI) {
 	void on1024(CCObject *sender) {
-		EditorUI *eui = (EditorUI *)sender;
-
 		auto lel = LevelEditorLayer::get();
 		lel->getObjectLayer()->addChild(lel->createObject(10245, ccp(rand() % 50 + 100, rand() % 50 + 100), false));
 	}
 	void on1025(CCObject *sender) {
-		EditorUI *eui = (EditorUI *)sender;
-
 		auto lel = LevelEditorLayer::get();
 		lel->getObjectLayer()->addChild(lel->createObject(10246, ccp(rand() % 50 + 100, rand() % 50 + 100), false));
 	}
@@ -472,8 +820,8 @@ class $modify(TEditorUI, EditorUI) {
 	void onPause(CCObject *sender) {
 		EditorUI::onPause(sender);
 
-		m_fields->add10245->setVisible(true);
-		m_fields->add10246->setVisible(true);
+		TechnoEditorUI::add10245->setVisible(true);
+		TechnoEditorUI::add10246->setVisible(true);
 	}
 
 	void onStopPlaytest(cocos2d::CCObject* sender) {
@@ -488,17 +836,18 @@ class $modify(TEditorUI, EditorUI) {
 		destroyPlayers(true);
 		if(TechnoSettings::release == false) printf( "player list is cleaned up\n");
 		
-		m_fields->add10245->setVisible(true);
-		m_fields->add10246->setVisible(true);
+		TechnoEditorUI::add10245->setVisible(true);
+		TechnoEditorUI::add10246->setVisible(true);
 	}
 	void onPlaytest(cocos2d::CCObject *sender) {
 		EditorUI::onPlaytest(sender);
 
-		m_fields->add10245->setVisible(false);
-		m_fields->add10246->setVisible(false);
+		TechnoEditorUI::add10245->setVisible(false);
+		TechnoEditorUI::add10246->setVisible(false);
 	}
 	bool init(LevelEditorLayer *l0) {
 		if(!EditorUI::init(l0)) return false;
+		m_fields->
 
         // auto spr = ButtonSprite::create("add obj 10245");
 		// auto spr2 = ButtonSprite::create("add obj 10246");
@@ -525,16 +874,18 @@ class $modify(TEditorUI, EditorUI) {
 		spr1->setScale(0.91875f);
 		btn->addChild(spr0);
 		btn2->addChild(spr1);
-		btn->setPosition(108.f, -234.f);
-		btn2->setPosition(108.f, -274.f);
+		btn->setPosition(128.f, 67.f);
+		btn2->setPosition(128.f, 24.f);
+		btn->setID("create-player-button");
+		btn2->setID("destroy-players-button");
 
-		CCMenu *topLeftMenu = dynamic_cast<CCMenu *>(getChildByID("top-left-menu"));
+		CCMenu *topLeftMenu = dynamic_cast<CCMenu *>(getChildByID("toolbar-categories-menu"));
 
 		topLeftMenu->addChild(btn);
 		topLeftMenu->addChild(btn2);
 
-		m_fields->add10245 = btn;
-		m_fields->add10246 = btn2;
+		TechnoEditorUI::add10245 = btn;
+		TechnoEditorUI::add10246 = btn2;
 
 		return true;
 	}
@@ -577,20 +928,17 @@ class $modify(TMenuLayer, MenuLayer) {
 		return;
 	}
 
-	void onMoreGames(CCObject*) {
-		FLAlertLayer::create("no", "no, just no", "OK")->show(); 
-	}
-	void onPlay(CCObject *sender) {
-		SimpleHTTPRequestLayer *l = SimpleHTTPRequestLayer::create();
-		l->start("https://gd.dogotrigger.xyz/tech21/getOfficialLevels21.php?gameVersion=21", httpresponse_selector(TMenuLayer::nCallback));
+	// void onPlay(CCObject *sender) {
+	// 	SimpleHTTPRequestLayer *l = SimpleHTTPRequestLayer::create();
+	// 	l->start("https://gd.dogotrigger.xyz/tech21/getOfficialLevels21.php?gameVersion=21", httpresponse_selector(TMenuLayer::nCallback));
 
-		CCNode *cn = (CCNode *)sender;
+	// 	CCNode *cn = (CCNode *)sender;
 
-		cn->addChild(l, 1024);
+	// 	cn->addChild(l, 1024);
 
-		l->m_pLC->setPosition(cn->getPositionX(), cn->getPositionY());
-		l->setPosition(56, 56);
-	}
+	// 	l->m_pLC->setPosition(cn->getPositionX(), cn->getPositionY());
+	// 	l->setPosition(56, 56);
+	// }
 	bool init() {
 		if(!MenuLayer::init()) return false;
 
