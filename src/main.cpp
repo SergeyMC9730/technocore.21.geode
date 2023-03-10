@@ -25,7 +25,7 @@ USE_GEODE_NAMESPACE();
 using namespace cocos2d;
 
 namespace TechnoSettings {
-	bool release = false;
+	bool release = true;
 }
 
 std::vector<PlayerObject *> player_list;
