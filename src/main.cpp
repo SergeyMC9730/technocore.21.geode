@@ -26,117 +26,11 @@ USE_GEODE_NAMESPACE();
 using namespace cocos2d;
 
 namespace TechnoSettings {
-	bool release = true;
+	bool release = false;
 }
 
 std::vector<PlayerObject *> player_list;
 bool isSetupComplete = false;
-
-namespace AnabanLevels {
-	class AnabanLevel : public CCObject {
-	public:
-		GJGameLevel *m_pLevel;
-		int m_nId;
-
-		AnabanLevel(GJGameLevel *level, int id) : m_pLevel(level), m_nId(id) {
-			this->autorelease();
-		}
-
-		void setLID(int id) {
-			m_nId = id;
-		}
-		void setLevel(GJGameLevel *level) {
-			m_pLevel = level;
-		}
-	};
-
-	GJGameLevel *levels[8] = {0};
-	int levelids[8] = {23079417, 23916625};
-	CCArray *levels2;
-
-	GJGameLevel *l0;
-	GJGameLevel *l1;
-
-	void init() {
-		l0 = GJGameLevel::create();
-		l0->m_levelName = "u suk 105359";
-		l0->m_levelDesc = "Release 2.1 already RubNum";
-		l0->m_levelString = "";
-		l0->m_creatorName = "anaban";
-		l0->m_recordString = "";
-		l0->m_userID = 18348456;
-		l0->m_accountID = 5375519;
-		l0->m_fastEditorZoom = 1.0f;
-		l0->m_isEditable = true;
-		l0->m_workingTime2 = 1;
-		l0->m_workingTime = 1;
-		l0->m_isVerified = 1;
-		l0->m_isVerifiedRaw = true;
-		l0->m_isUploaded = true;
-		l0->m_isUnlocked = true;
-		l0->m_levelVersion = 69;
-		l0->m_isChkValid = true;
-		l0->m_isCompletionLegitimate = true;
-		l0->m_levelLength = 05;
-		l0->m_songID = 1337;
-		l0->m_dislikes = 0;
-		l0->m_coins = 0;
-		l0->m_downloads = 0;
-		l0->m_gameVersion = 20;
-		l0->m_starsRequested = 69;
-		l0->m_levelID = 23079417;
-		l0->m_levelType = GJLevelType::Saved;
-		l0->m_M_ID = 23079417;
-		l0->m_levelNotDownloaded = false;
-
-		l1 = GJGameLevel::create();
-		l1->m_levelName = "??? 98624";
-		l1->m_levelDesc = "??\n\n";
-		l1->m_levelString = "";
-		l1->m_creatorName = "anaban";
-		l1->m_recordString = "";
-		l1->m_userID = 18348456;
-		l1->m_accountID = 5375519;
-		l1->m_fastEditorZoom = 1.0f;
-		l1->m_isEditable = true;
-		l1->m_workingTime2 = 1;
-		l1->m_starsRequested = 13;
-		l1->m_workingTime = 1;
-		l1->m_isVerified = 1;
-		l1->m_isVerifiedRaw = true;
-		l1->m_isUploaded = true;
-		l1->m_isUnlocked = true;
-		l1->m_levelVersion = 13;
-		l1->m_isChkValid = true;
-		l1->m_isCompletionLegitimate = true;
-		l1->m_levelLength = 05;
-		l1->m_songID = 1337;
-		l1->m_dislikes = 0;
-		l1->m_coins = 0;
-		l1->m_downloads = 0;
-		l1->m_gameVersion = 20;
-		l1->m_levelID = 23916625;
-		l1->m_levelType = GJLevelType::Saved;
-		l1->m_M_ID = 23916625;
-		l1->m_levelNotDownloaded = false;
-
-		levels2 = CCArray::create(l0, l1, nullptr);
-
-		levels[0] = l0;
-		levels[1] = l1;
-	}
-
-	GJGameLevel *findByID(int id) {
-		int i = 0;
-		while(i < 2) {
-			GJGameLevel *l = levels[i];
-			printf("%d %d %d\n", levelids[i], id, i);
-			if(levelids[i] == id) return l;
-			i++;
-		}
-		return nullptr;
-	}
-}
 
 void destroyPlayers(bool onScreen) {
 	if(onScreen) {
@@ -148,6 +42,21 @@ void destroyPlayers(bool onScreen) {
 		}
 	}
 	player_list.clear();
+}
+void syncPlayerSpeeds(float sp) {
+	int i = 0;
+	while(i < player_list.size()) {
+		player_list[i]->m_playerSpeed = sp;
+		i++;
+	}
+}
+void syncPlayerX(float x) {
+	int i = 0;
+	while(i < player_list.size()) {
+		player_list[i]->m_position.x = x;
+		player_list[i]->setPositionX(x);
+		i++;
+	}
 }
 void playPlayerDeathEffect(PlayerObject *pl) {
 	auto fade = CCFadeTo::create(0.05, 0);
@@ -208,7 +117,9 @@ class CreatePlayerTrigger : public GameObjectController {
 		else {
 			LevelEditorLayer::get()->m_batchNodePlayer->addChild(po);
 		}
-		po->setPosition(this->getObject()->getPosition());
+		CCPoint pos = this->getObject()->getPosition();
+		pos.x = gl->m_player1->getPositionX();
+		po->setPosition(pos);
 		// po->addAllParticles();
 		// int particles = po->m_particleSystems->count();
 		// int i = 0;
@@ -378,8 +289,6 @@ bool setupStuff() {
 	GameObjectFactory::get()->add(1334, [](GameObject* g) {
 		return new BoostPortal(g, "boost_05_001.png", kTimeModVeryVeryFast);
 	});
-	
-	AnabanLevels::init();
 
 	return true;
 }
@@ -430,152 +339,6 @@ namespace XOR {
 		return data;
 	}
 }
-
-// class $modify(LevelInfoLayer) {
-// 	bool init(GJGameLevel *lvl) {
-// 		lvl->m_isEditable = true;
-// 		lvl->m_password = 0;
-// 		if(!TechnoSettings::release) {
-// 			printf("%s", lvl->m_levelString.c_str());
-// 		}
-// 		return LevelInfoLayer::init(lvl);
-// 	}
-// };
-
-
-class $modify(TLevelBrowserLayer, LevelBrowserLayer) {
-	int m_nLevelID;
-	CCArray *m_pArray;
-
-	bool isCorrect(const char *idk) {
-		return true;
-	}
-
-	void requestComplete(CCHttpClient* client, CCHttpResponse* response) {
-		SimpleHTTPRequestLayer *a = (SimpleHTTPRequestLayer *)response->getHttpRequest()->getTarget();
-		TLevelBrowserLayer *lb = (TLevelBrowserLayer *)a->m_pObj2;
-		a->close();
-
-		printf("succeed: %d\n", response->isSucceed());
-
-		if(!response->isSucceed()) {
-			const char *err = response->getErrorBuffer();
-			printf("%d %s %s\n", response->getResponseCode(), response->getResponseData()->data(), err);
-		} else {
-			printf("%s");
-		}
-
-		CCArray *arr;
-
-		auto l0 = GJGameLevel::create();
-		l0->m_levelName = "u suk 105359";
-		l0->m_levelDesc = "Release 2.1 already RubNum";
-		l0->m_levelString = "";
-		l0->m_creatorName = "anaban";
-		l0->m_recordString = "";
-		l0->m_userID = 18348456;
-		l0->m_accountID = 5375519;
-		l0->m_fastEditorZoom = 1.0f;
-		l0->m_isEditable = true;
-		l0->m_workingTime2 = 1;
-		l0->m_workingTime = 1;
-		l0->m_isVerified = 1;
-		l0->m_isVerifiedRaw = true;
-		l0->m_isUploaded = true;
-		l0->m_isUnlocked = true;
-		l0->m_levelVersion = 69;
-		l0->m_isChkValid = true;
-		l0->m_isCompletionLegitimate = true;
-		l0->m_levelLength = 05;
-		l0->m_songID = 1337;
-		l0->m_dislikes = 0;
-		l0->m_coins = 0;
-		l0->m_downloads = 0;
-		l0->m_gameVersion = 20;
-		l0->m_starsRequested = 69;
-		l0->m_levelID = 23079417;
-		l0->m_levelType = GJLevelType::Saved;
-		l0->m_M_ID = 23079417;
-		l0->m_levelNotDownloaded = false;
-
-		auto l1 = GJGameLevel::create();
-		l1->m_levelName = "??? 98624";
-		l1->m_levelDesc = "??\n\n";
-		l1->m_levelString = "";
-		l1->m_creatorName = "anaban";
-		l1->m_recordString = "";
-		l1->m_userID = 18348456;
-		l1->m_accountID = 5375519;
-		l1->m_fastEditorZoom = 1.0f;
-		l1->m_isEditable = true;
-		l1->m_workingTime2 = 1;
-		l1->m_starsRequested = 13;
-		l1->m_workingTime = 1;
-		l1->m_isVerified = 1;
-		l1->m_isVerifiedRaw = true;
-		l1->m_isUploaded = true;
-		l1->m_isUnlocked = true;
-		l1->m_levelVersion = 13;
-		l1->m_isChkValid = true;
-		l1->m_isCompletionLegitimate = true;
-		l1->m_levelLength = 05;
-		l1->m_songID = 1337;
-		l1->m_dislikes = 0;
-		l1->m_coins = 0;
-		l1->m_downloads = 0;
-		l1->m_gameVersion = 20;
-		l1->m_levelID = 23916625;
-		l1->m_levelType = GJLevelType::Saved;
-		l1->m_M_ID = 23916625;
-		l1->m_levelNotDownloaded = false;
-
-		arr = CCArray::create(l0, l1, nullptr);
-
-		lb->m_itemCount = 2;
-		lb->m_pageStartIdx = 1;
-		lb->m_pageEndIdx = 1;
-		lb->setupLevelBrowser(arr);
-		char *p0 = (char *)lb;
-		char *p1 = (char *)&lb->m_pageEndIdx;
-		printf("offset = %d\n", p1 - p0);
-		//lb->loadingLevelsFinished(arr, "123");
-
-		ISGDH = false;
-	}
-
-	void loadPage(GJSearchObject *obj) {
-		printf("hook 1\n");
-		int levelid = 0;
-		if(!ISGDH) {
-			LevelBrowserLayer::loadPage(obj);
-			return;
-		}
-		levelid = std::atoi(obj->m_searchQuery.c_str());
-		printf("levelid: %d\n", levelid);
-
-		CCArray *arr = CCArray::create();
-
-		LoadingCircleLayer *cl = LoadingCircleLayer::create();
-		//setupLevelBrowser(arr);
-
-		std::string str = "";
-		str = "https://history.geometrydash.eu/api/v1/level/";
-		str += std::to_string(levelid);
-		str += "/";
-
-		m_fields->m_nLevelID = levelid;
-		m_fields->m_pArray = arr;
-
-		printf("request: %s\n", str.c_str());
-
-		SimpleHTTPRequestLayer *a = SimpleHTTPRequestLayer::create();
-		a->setReferer("https://history.geometrydash.eu/");
-		a->start(str.c_str(), httpresponse_selector(TLevelBrowserLayer::requestComplete), this);
-		auto winSize = CCDirector::sharedDirector()->getWinSize();
-		cl->setPosition({winSize.width / 2, winSize.height / 2});
-		addChild(a, 100);
-	}
-};
 
 bool mainPlayerDied = false;
 bool shouldSchedule = false;
@@ -632,6 +395,9 @@ class $modify(LevelEditorLayer) {
 	}
 	void update(float f) {
 		LevelEditorLayer::update(f);
+		syncPlayerSpeeds(this->m_player1->m_playerSpeed);
+		syncPlayerX(this->m_player1->m_position.x);
+		syncPlayerX(this->m_player1->getPositionX());
 		doPlayerJob(f);
 	}
 };
@@ -645,6 +411,9 @@ class $modify(TPlayLayer, PlayLayer) {
 	}
 	void update(float f) {
 		PlayLayer::update(f);
+		syncPlayerSpeeds(this->m_player1->m_playerSpeed);
+		syncPlayerX(this->m_player1->m_position.x);
+		syncPlayerX(this->m_player1->getPositionX());
 		doPlayerJob(f);
 	}
 };
@@ -684,30 +453,181 @@ class $modify(CreatorLayer) {
 		savedBtn->setPosition({228.f, 255.825f});
 		scoresBtn->setPosition({334.f, 255.825f});
 
+		// auto winsize = CCDirector::sharedDirector()->getWinSize();
+		// cbMenu->setPositionX(winsize.width / 2);
+
 		return true;
 	}
 };
 
+
+namespace TechnoObjects {
+	std::vector<CCLayer *> selectorlayers;
+	CCPoint prevPos;
+	float prevScale;
+
+	class TechnoObjectSelectorLayer : public CCLayer {
+	public:
+
+		static void createCustomObject(int id) {
+			auto lel = LevelEditorLayer::get();
+			CCPoint pos;
+			if(lel->m_currentStartPos == nullptr) {
+				pos = ccp(rand() % 50 + 100, rand() % 50 + 100);
+				FLAlertLayer::create("Success", "Object was made at the beggining of your level", "OK")->show();
+			} else {
+				pos = lel->m_currentStartPos->getPosition();
+				FLAlertLayer::create("Success", "Object was made at the last Start pos trigger", "OK")->show();
+			}
+			lel->createObject(id, pos, false);
+			lel->sortAllChildren();
+			CCLayer *a = static_cast<CCLayer *>(lel->getChildren()->objectAtIndex(2));
+			pos.y -= 100;
+			pos.x += 100;
+			prevPos = a->getPosition();
+			prevScale = a->getScale();
+			a->runAction(CCEaseInOut::create(CCMoveTo::create(2.f, pos), 2.f));
+			a->runAction(CCEaseInOut::create(CCScaleTo::create(2.f, 0.7f), 2.f));
+		}
+		void recoverFromPosition(CCObject *sender) {
+			auto lel = LevelEditorLayer::get();
+			CCLayer *a = static_cast<CCLayer *>(lel->getChildren()->objectAtIndex(2));
+			a->runAction(CCEaseInOut::create(CCMoveTo::create(2.f, prevPos), 2.f));
+			a->runAction(CCEaseInOut::create(CCScaleTo::create(2.f, prevScale), 2.f));
+		}
+
+		void on1024(CCObject *sender) {
+			TechnoObjectSelectorLayer::createCustomObject(10245);
+		}
+		void on1025(CCObject *sender) {
+			TechnoObjectSelectorLayer::createCustomObject(10246);
+		}
+		void onExitButton(CCObject *sender) {
+			int i = 0;
+			while(i < selectorlayers.size()) {
+				selectorlayers[i]->removeMeAndCleanup();
+				i++;
+			}
+			selectorlayers.clear();
+		}
+
+		bool init() {
+			CCLayer *objectSelector = CCLayer::create();
+			CCLayer *scale9layer = CCLayer::create();
+
+			const char *a = CreatePlayerTrigger::getTexture();
+			const char *b = DestroyPlayersTrigger::getTexture();
+
+			CCScale9Sprite *spr1 = CCScale9Sprite::create("GJ_square02.png");
+			auto winsize = CCDirector::sharedDirector()->getWinSize();
+			//spr1->setAnchorPoint({0, 1});
+			spr1->setContentSize({winsize.width * 0.5f, winsize.height * 0.66666f});
+
+			scale9layer->addChild(spr1);
+			objectSelector->addChild(scale9layer, 0);
+
+			//scale9layer->setAnchorPoint({0, 1});
+			scale9layer->setPosition({winsize.width / 2, winsize.height / 2});
+			
+			auto cache = cocos2d::CCSpriteFrameCache::sharedSpriteFrameCache();
+
+			auto spr0 = CCSprite::createWithSpriteFrame(cache->spriteFrameByName(a));
+			auto spr2 = CCSprite::createWithSpriteFrame(cache->spriteFrameByName(b));
+
+			auto gjb = CCSprite::create("GJ_button_05.png");
+			gjb->setScale(0.75);
+
+			auto btn = CCMenuItemSpriteExtra::create(
+				gjb, this, menu_selector(TechnoObjectSelectorLayer::on1024)
+			);
+			auto btn2 = CCMenuItemSpriteExtra::create(
+				gjb, this, menu_selector(TechnoObjectSelectorLayer::on1025)
+			);
+			spr0->setPosition({15.f, 15.5f});
+			spr2->setPosition({15.f, 15.5f});
+			spr0->setScale(0.91875f);
+			spr2->setScale(0.91875f);
+
+			btn->addChild(spr0);
+			btn2->addChild(spr2);
+
+			auto men1 = CCMenu::create(btn, btn2, nullptr);
+			men1->alignItemsHorizontallyWithPadding(20.f);
+
+			objectSelector->addChild(men1, 1);
+
+			men1->setPosition({winsize.width / 2, winsize.height / 2 + 20});
+
+			auto bmf = CCLabelBMFont::create("Object Selector", "bigFont.fnt");
+			bmf->setScale(0.5f);
+			bmf->setPositionX(winsize.width / 2);
+			bmf->setPositionY(winsize.height * 0.8f - 10);
+			
+			objectSelector->addChild(bmf, 1);
+
+			auto exitBtn = CCSprite::createWithSpriteFrameName("GJ_closeBtn_001.png");
+			auto btn3 = CCMenuItemSpriteExtra::create(
+				exitBtn, this, menu_selector(TechnoObjectSelectorLayer::onExitButton)
+			);
+
+			CCMenu *men2 = CCMenu::create();
+			CCMenu *men3 = CCMenu::create();
+
+			men2->setPosition({
+				winsize.width * 0.25f,
+				winsize.height * 0.8f
+			});
+			auto spr4 = ButtonSprite::create("Previous position");
+			auto btn4 = CCMenuItemSpriteExtra::create(
+				spr4, this, menu_selector(TechnoObjectSelectorLayer::recoverFromPosition)
+			);
+			men3->addChild(btn4);
+			spr4->setScale(0.7f);
+			men3->setPosition({
+				winsize.width / 2,
+				winsize.height * 0.25f
+			});
+			men2->addChild(btn3);
+
+			objectSelector->addChild(men3, 2);
+			objectSelector->addChild(men2, 2);
+
+			this->addChild(objectSelector);
+
+			auto base = CCSprite::create("square.png");
+			base->setPosition({ 0, 0 });
+			base->setScale(500.f);
+			base->setColor({0, 0, 0});
+			base->setOpacity(0);
+			base->runAction(CCFadeTo::create(0.3f, 125));
+
+			this->addChild(base, -1);
+
+			objectSelector->setScale(0.1f);
+			objectSelector->runAction(CCEaseElasticOut::create(CCScaleTo::create(0.5f, 1.0f), 0.6f));
+
+			selectorlayers.push_back(static_cast<CCLayer *>(this));
+
+			return true;
+		}
+
+		CREATE_FUNC(TechnoObjectSelectorLayer);
+	};
+}
+
 namespace TechnoEditorUI {
 	CCMenuItemSpriteExtra *add10245;
-	CCMenuItemSpriteExtra *add10246;
 };
 
 class $modify(TEditorUI, EditorUI) {
 	void on1024(CCObject *sender) {
 		auto lel = LevelEditorLayer::get();
-		lel->getObjectLayer()->addChild(lel->createObject(10245, ccp(rand() % 50 + 100, rand() % 50 + 100), false));
+		lel->m_editorUI->addChild(TechnoObjects::TechnoObjectSelectorLayer::create(), 999);
 	}
-	void on1025(CCObject *sender) {
-		auto lel = LevelEditorLayer::get();
-		lel->getObjectLayer()->addChild(lel->createObject(10246, ccp(rand() % 50 + 100, rand() % 50 + 100), false));
-	}
-
 	void onPause(CCObject *sender) {
 		EditorUI::onPause(sender);
 
 		TechnoEditorUI::add10245->setVisible(true);
-		TechnoEditorUI::add10246->setVisible(true);
 	}
 
 	void onStopPlaytest(cocos2d::CCObject* sender) {
@@ -723,54 +643,35 @@ class $modify(TEditorUI, EditorUI) {
 		if(TechnoSettings::release == false) printf( "player list is cleaned up\n");
 		
 		TechnoEditorUI::add10245->setVisible(true);
-		TechnoEditorUI::add10246->setVisible(true);
 	}
 	void onPlaytest(cocos2d::CCObject *sender) {
 		EditorUI::onPlaytest(sender);
 
 		TechnoEditorUI::add10245->setVisible(false);
-		TechnoEditorUI::add10246->setVisible(false);
 	}
 	bool init(LevelEditorLayer *l0) {
 		if(!EditorUI::init(l0)) return false;
 
-        // auto spr = ButtonSprite::create("add obj 10245");
-		// auto spr2 = ButtonSprite::create("add obj 10246");
-		const char *a = CreatePlayerTrigger::getTexture();
-		const char *b = DestroyPlayersTrigger::getTexture();
+		TechnoObjects::selectorlayers.clear();
 
-		auto cache = cocos2d::CCSpriteFrameCache::sharedSpriteFrameCache();
-
-		auto spr0 = CCSprite::createWithSpriteFrame(cache->spriteFrameByName(a));
-		auto spr1 = CCSprite::createWithSpriteFrame(cache->spriteFrameByName(b));
-
-		auto gjb = CCSprite::create("GJ_button_05.png");
-		gjb->setScale(0.75);
-
+		auto spr0 = CCSprite::createWithSpriteFrameName("edit_addCBtn_001.png");
         auto btn = CCMenuItemSpriteExtra::create(
-            gjb, this, menu_selector(TEditorUI::on1024)
+            spr0, this, menu_selector(TEditorUI::on1024)
         );
-		auto btn2 = CCMenuItemSpriteExtra::create(
-            gjb, this, menu_selector(TEditorUI::on1025)
-        );
-		spr0->setPosition({15.f, 15.5f});
-		spr1->setPosition({15.f, 15.5f});
-		spr0->setScale(0.91875f);
-		spr1->setScale(0.91875f);
-		btn->addChild(spr0);
-		btn2->addChild(spr1);
-		btn->setPosition(128.f, 67.f);
-		btn2->setPosition(128.f, 24.f);
-		btn->setID("create-player-button");
-		btn2->setID("destroy-players-button");
+		btn->setID("object-selector-button");
 
-		CCMenu *topLeftMenu = dynamic_cast<CCMenu *>(getChildByID("toolbar-categories-menu"));
+		CCNode *n1 = this->getChildByID("playback-menu");
+		CCNode *n2 = n1->getChildByID("music-playback-button");
 
-		topLeftMenu->addChild(btn);
-		topLeftMenu->addChild(btn2);
+		btn->setPosition(n2->getPosition());
+		btn->setPositionX(btn->getPositionX() + 42);
+		btn->setPositionY(btn->getPositionY() + 1);
+
+		n1->addChild(btn);
 
 		TechnoEditorUI::add10245 = btn;
-		TechnoEditorUI::add10246 = btn2;
+
+		l0->m_debugDraw = !TechnoSettings::release;
 
 		return true;
 	}
@@ -832,7 +733,7 @@ class $modify(TMenuLayer, MenuLayer) {
 		CCSize winSize = CCDirector::sharedDirector()->getWinSize();
 
 		auto tch = CCLabelBMFont::create((TechnoSettings::release == false) ? "TechnoGDPS BETA BUILD 1.0" : "TechnoGDPS RELEASE 1.0", "bigFont.fnt");
-		tch->setPositionY(300);
+		tch->setPositionY(winSize.height - 20);
 		tch->setPositionX(winSize.width / 2);
 		tch->setScale(.375f);
 		tch->setAnchorPoint({0.5f, 0.f});
