@@ -10,6 +10,7 @@
 #include <Geode/modify/LevelBrowserLayer.hpp>
 #include <Geode/utils/web.hpp>
 #include <Geode/modify/LevelSearchLayer.hpp>
+#include <Geode/modify/LevelInfoLayer.hpp>
 #include "networking.h"
 
 #include <Geode/modify/MenuLayer.hpp>
@@ -422,48 +423,25 @@ class $modify(LevelTools) {
 
 bool ISGDH = false;
 
-class $modify(TLevelSearchLayer, LevelSearchLayer) {
-	bool useGDH = false;
-	CCSprite *enabledGDH;
-	CCSprite *disabledGDH;
-
-	CCMenuItemToggler *spr;
-
-	void setGDHistoryButton(CCObject *obj) {
-		auto l = reinterpret_cast<TLevelSearchLayer *>(obj);
-
-		l->m_fields->useGDH = !l->m_fields->useGDH;
-		ISGDH = l->m_fields->useGDH;
-
-		if(!TechnoSettings::release) {
-			printf("state is set to %d\n", l->m_fields->useGDH);
-		}
+namespace XOR {
+	std::vector<char> crypt(const std::string &key, std::vector<char>& data) {
+		for (size_t i = 0; i != data.size(); i++)
+        data[i] ^= key[ i % key.size() ];
+		return data;
 	}
+}
 
-	bool init() {
-		ISGDH = false;
+// class $modify(LevelInfoLayer) {
+// 	bool init(GJGameLevel *lvl) {
+// 		lvl->m_isEditable = true;
+// 		lvl->m_password = 0;
+// 		if(!TechnoSettings::release) {
+// 			printf("%s", lvl->m_levelString.c_str());
+// 		}
+// 		return LevelInfoLayer::init(lvl);
+// 	}
+// };
 
-		if(!LevelSearchLayer::init()) return false;
-
-		m_fields->enabledGDH = CCSprite::createWithSpriteFrameName("controllerBtn_A_001.png");
-		m_fields->disabledGDH = CCSprite::createWithSpriteFrameName("controllerBtn_B_001.png");
-
-		auto menu = CCMenu::create();
-
-		// spr->initWithNormalSprite(enabledGDHsabledGDH, disabledGDH, this, menu_selector(TLevelSearchLayer::setGDHistoryButton));, di
-		//m_fields->spr = CCMenuItemSprite::create(m_fields->enabledGDH, m_fields->disabledGDH, m_fields->disabledGDH, menu_selector(TLevelSearchLayer::setGDHistoryButton));
-		// m_fields->spr = CCMenuItemSpriteExtra::create(m_fields->enabledGDH, this, menu_selector(TLevelSearchLayer::setGDHistoryButton));
-		CCMenuItemToggler* ch1_box = CCMenuItemToggler::create(m_fields->disabledGDH, m_fields->enabledGDH, this, menu_selector(TLevelSearchLayer::setGDHistoryButton));
-		m_fields->spr = ch1_box;
-
-		menu->addChild(m_fields->spr);
-		menu->setPosition({50, 50});
-
-		//this->addChild(menu);
-
-		return true;
-	}
-};
 
 class $modify(TLevelBrowserLayer, LevelBrowserLayer) {
 	int m_nLevelID;
@@ -679,64 +657,32 @@ class $modify(CreatorLayer) {
 	bool init() {
 		if(!CreatorLayer::init()) return false;
 
-		CCObject *obj1;
-		CCNode *nd1;
-		CCNode *node_to_remove = CCNode::create();
+		CCMenu *cbMenu = static_cast<CCMenu *>(this->getChildByID("creator-buttons-menu"));
 
-		CCARRAY_FOREACH(this->getChildren(), obj1) {
-			nd1 = (CCNode *)obj1;
+		CCNode *featuredBtn = 	cbMenu->getChildByID("featured-button");
+		CCNode *hafBtn = 		cbMenu->getChildByID("hall-of-fame-button");
+		CCNode *mpBtn = 		cbMenu->getChildByID("map-packs-button");
+		CCNode *searchBtn = 	cbMenu->getChildByID("search-button");
+		CCNode *questsBtn = 	cbMenu->getChildByID("quests-button");
+		CCNode *dailyBtn = 		cbMenu->getChildByID("daily-button");
+		CCNode *weeklyBtn = 	cbMenu->getChildByID("weekly-button");
+		CCNode *gauntletsBtn = 	cbMenu->getChildByID("gauntlets-button");
+		CCNode *createBtn = 	cbMenu->getChildByID("create-button");
+		CCNode *savedBtn = 		cbMenu->getChildByID("saved-button");
+		CCNode *scoresBtn = 	cbMenu->getChildByID("scores-button");
 
-			if(check_position(nd1, 284.5f, 160.f)) {
-				CCObject *obj2;
-				CCNode *nd2;
+		weeklyBtn->removeMeAndCleanup();
 
-				CCARRAY_FOREACH(nd1->getChildren(), obj2) {
-					nd2 = (CCNode *)obj2;
-
-					if (check_position(nd2, -100.f, 97.f)) { // 0
-						nd2->setPositionX(-110.f);
-						nd2->setPositionY(97.f);
-					}
-					if (check_position(nd2, 0.f, 97.f)) { // 1
-						nd2->setPositionX(-1.f);
-					}
-					if (check_position(nd2, 100.f, 97.f)) { // 2
-						nd2->setPositionX(109.f);
-					}
-					if (check_position(nd2, -150.f, 0.f)) { // 3
-						nd2->setPositionX(-160.f);
-					}
-					if (check_position(nd2, -50.f, 0.f)) { // 4
-						nd2->setPositionX(-52.f);
-					}
-					if (check_position(nd2, 50.f, 0.f)) { // 5
-						if (node_to_remove != NULL)
-						{
-							node_to_remove->removeMeAndCleanup();
-						}
-						node_to_remove = nd2;
-					}
-					if (check_position(nd2, -150.f, -97.f)) { // 6
-						nd2->setPositionX(-113.f);
-					}
-					if (check_position(nd2, -50.f, -97.f)) { // 7
-						nd2->setPositionX(-1.f);
-					}
-					if (check_position(nd2, 50.f, -97.f)) { // 8
-						nd2->setPositionX(56.f);
-						nd2->setPositionY(0.f);
-					}
-					if (check_position(nd2, 150.f, -97.f)) { // 9
-						nd2->setPositionX(112.f);
-					}
-					if (check_position(nd2, 150.f, 0.f)) { // 10
-						nd2->setPositionX(165.f);
-					}
-				}
-			}
-		}
-
-		node_to_remove->removeMeAndCleanup();
+		featuredBtn->setPosition({122.f, 54.f});
+		hafBtn->setPosition({228.f, 54.175f});
+		mpBtn->setPosition({283.913f, 155.f});
+		searchBtn->setPosition({334.f, 54.175f});
+		questsBtn->setPosition({64.369f, 155.f});
+		dailyBtn->setPosition({174.194f, 155.f});
+		gauntletsBtn->setPosition({391.631f, 155.f});
+		createBtn->setPosition({122.f, 255.825f});
+		savedBtn->setPosition({228.f, 255.825f});
+		scoresBtn->setPosition({334.f, 255.825f});
 
 		return true;
 	}
@@ -856,7 +802,7 @@ void buttonCallback(CCObject * sender) {
 
 	action->setTarget(sender);
 
-	auto alert = FLAlertLayer::create(action, "Error" ,"New levels will be added after <cg>CC!</c>", "Ok", "wait for 2.2");
+	auto alert = FLAlertLayer::create(action, "Error" ,"New levels are gonna be added after <cg>CC!</c>", "Ok", "wait for 2.2");
 	alert->show();
 }
 
