@@ -347,6 +347,12 @@ bool isCompeletedLVL = false;
 class $modify(TPlayerObject, PlayerObject) {
 	void update(float delta) {
 		PlayerObject::update(delta);
+		if(PlayLayer::get()) {
+			if(this == PlayLayer::get()->m_player2) {
+				this->m_position.x = PlayLayer::get()->m_player1->m_position.x;
+				this->setPositionX(PlayLayer::get()->m_player1->getPositionX());
+			}
+		}
 	}
 	void playerDestroyed(bool p0) {
 		int i = 0;
@@ -414,6 +420,10 @@ class $modify(TPlayLayer, PlayLayer) {
 		syncPlayerSpeeds(this->m_player1->m_playerSpeed);
 		syncPlayerX(this->m_player1->m_position.x);
 		syncPlayerX(this->m_player1->getPositionX());
+		if(this->m_player2) {
+			this->m_player2->m_position.x = this->m_player1->m_position.x;
+			this->m_player2->setPositionX(this->m_player2->getPositionX());
+		}
 		doPlayerJob(f);
 	}
 };
