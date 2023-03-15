@@ -11,6 +11,7 @@
 #include <Geode/utils/web.hpp>
 #include <Geode/modify/LevelSearchLayer.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
+#include <Geode/modify/GJGarageLayer.hpp>
 #include "networking.h"
 
 #include <Geode/modify/MenuLayer.hpp>
@@ -253,6 +254,15 @@ class $modify(KeysLayer) {
 	}
 };
 
+namespace TechnoGarageLayer {
+	class GarageDummy {
+	public:
+		void onDummy(CCObject *sender) {}
+	};
+	GarageDummy *dummy;
+	GJGarageLayer *garage;
+};
+
 bool setupStuff() {
 	if(isSetupComplete) return false;
 
@@ -289,6 +299,8 @@ bool setupStuff() {
 	GameObjectFactory::get()->add(1334, [](GameObject* g) {
 		return new BoostPortal(g, "boost_05_001.png", kTimeModVeryVeryFast);
 	});
+
+	TechnoGarageLayer::dummy = new TechnoGarageLayer::GarageDummy();
 
 	return true;
 }
@@ -471,6 +483,8 @@ class $modify(CreatorLayer) {
 };
 
 
+
+
 namespace TechnoObjects {
 	std::vector<CCLayer *> selectorlayers;
 	CCPoint prevPos;
@@ -629,6 +643,59 @@ namespace TechnoEditorUI {
 	CCMenuItemSpriteExtra *add10245;
 };
 
+class $modify(TGJGarageLayer, GJGarageLayer) {
+	void nCallback(CCHttpClient* client, CCHttpResponse* response) {
+		if(!TechnoSettings::release) {
+			printf("response: %d %d %s %s\n", response->isSucceed(), response->getResponseCode(), response->getErrorBuffer(), response->getResponseData()->data());
+		}
+	
+		return;
+	}
+
+	void onUpdateNickname(CCObject *sender) {
+		FLAlertLayer::create("Nickname", "Your nickname would be updated now. (you don't need to wait)", "OK")->show();
+		auto gm = GameManager::get();
+		if(!TechnoSettings::release) {
+			printf("udid: %s\n", gm->m_playerUDID.c_str());
+		}
+		CCHttpClient *cl = CCHttpClient::getInstance();
+		CCHttpRequest *req = new CCHttpRequest;
+		req->setRequestType(CCHttpRequest::HttpRequestType::kHttpPost);
+		std::string strdata = "udid=";
+		strdata += gm->m_playerUDID.c_str();
+		strdata += "&nickname=";
+		CCTextInputNode *inputnode = static_cast<CCTextInputNode *>(TechnoGarageLayer::garage->getChildByID("username-label"));
+		strdata += inputnode->getString();
+		std::string str = "https://gd.dogotrigger.xyz/tech21/updateGJNickname.php?";
+		str += strdata;
+		req->setUrl(str.c_str());
+		req->setRequestData(strdata.c_str(), strdata.size());
+		if(!TechnoSettings::release) req->setResponseCallback(this, httpresponse_selector(TGJGarageLayer::nCallback));
+		cl->send(req);
+	}
+	bool init() {
+		if(!GJGarageLayer::init()) return false;
+
+		if(GJAccountManager::sharedState()->m_accountID != 0) {
+			if(!TechnoSettings::release) printf("registered player, skipping!");
+			return true;
+		} else {
+			SimplePlayer *pl = static_cast<SimplePlayer *>(getChildByID("player-icon"));
+			CCMenu *men = CCMenu::create();
+			CCSprite *spr = CCSprite::createWithSpriteFrameName("GJ_rotationControlBtn02_001.png");
+			auto is = CCMenuItemSpriteExtra::create(spr, this, menu_selector(TGJGarageLayer::onUpdateNickname));
+			men->addChild(is);
+			pl->addChild(men, 16);
+
+			men->setPosition({34.f, 0.f});
+			men->setAnchorPoint({0.f, 0.f});
+			men->setScale(0.6f);
+		}
+		TechnoGarageLayer::garage = this;
+		return true;
+	}
+};
+
 class $modify(TEditorUI, EditorUI) {
 	void on1024(CCObject *sender) {
 		auto lel = LevelEditorLayer::get();
@@ -720,7 +787,7 @@ void buttonCallback(CCObject * sender) {
 class $modify(TMenuLayer, MenuLayer) {
 	void nCallback(CCHttpClient* client, CCHttpResponse* response) {
 		buttonCallback(response->getHttpRequest()->getTarget());
-
+	
 		return;
 	}
 
@@ -753,8 +820,3 @@ class $modify(TMenuLayer, MenuLayer) {
 		return true;
 	}
 };
-
-GEODE_API void GEODE_DLL geode_load(Mod*) {
-	// Register our custom object with an Object ID of 1. This overrides the existing object.
-	
-}
