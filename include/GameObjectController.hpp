@@ -2,6 +2,8 @@
 
 #include <Geode/Geode.hpp>
 
+#include "MultiIntegerType.hpp"
+
 class GameObjectController {
  protected:
 	GameObject* m_object;
