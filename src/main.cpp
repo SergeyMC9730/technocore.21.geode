@@ -464,19 +464,19 @@ class $modify(CreatorLayer) {
 
 		weeklyBtn->removeMeAndCleanup();
 
-		featuredBtn->setPosition({122.f, 54.f});
-		hafBtn->setPosition({228.f, 54.175f});
-		mpBtn->setPosition({283.913f, 155.f});
-		searchBtn->setPosition({334.f, 54.175f});
-		questsBtn->setPosition({64.369f, 155.f});
-		dailyBtn->setPosition({174.194f, 155.f});
-		gauntletsBtn->setPosition({391.631f, 155.f});
-		createBtn->setPosition({122.f, 255.825f});
-		savedBtn->setPosition({228.f, 255.825f});
-		scoresBtn->setPosition({334.f, 255.825f});
+		featuredBtn->setPosition({122.f - 6.f, 54.f});
+		hafBtn->setPosition({228.f - 6.f, 54.175f});
+		mpBtn->setPosition({283.913f - 6.f, 155.f});
+		searchBtn->setPosition({334.f - 6.f, 54.175f});
+		questsBtn->setPosition({64.369f - 6.f, 155.f});
+		dailyBtn->setPosition({174.194f - 6.f, 155.f});
+		gauntletsBtn->setPosition({391.631f - 6.f, 155.f});
+		createBtn->setPosition({122.f - 6.f, 255.825f});
+		savedBtn->setPosition({228.f - 6.f, 255.825f});
+		scoresBtn->setPosition({334.f - 6.f, 255.825f});
 
-		// auto winsize = CCDirector::sharedDirector()->getWinSize();
-		// cbMenu->setPositionX(winsize.width / 2);
+		auto winsize = CCDirector::sharedDirector()->getWinSize();
+		cbMenu->setPositionX(winsize.width / 2);
 
 		return true;
 	}
@@ -680,16 +680,24 @@ class $modify(TGJGarageLayer, GJGarageLayer) {
 			if(!TechnoSettings::release) printf("registered player, skipping!");
 			return true;
 		} else {
-			SimplePlayer *pl = static_cast<SimplePlayer *>(getChildByID("player-icon"));
+			sortAllChildren();
+			SimplePlayer *pl = static_cast<SimplePlayer *>(getChildren()->objectAtIndex(5));
 			CCMenu *men = CCMenu::create();
 			CCSprite *spr = CCSprite::createWithSpriteFrameName("GJ_rotationControlBtn02_001.png");
+			
 			auto is = CCMenuItemSpriteExtra::create(spr, this, menu_selector(TGJGarageLayer::onUpdateNickname));
+			auto label = CCLabelBMFont::create("Update nickname", "bigFont.fnt");
+			label->setPosition({78.f, 0.f});
+			label->setScale(0.4f);
+			
 			men->addChild(is);
+			men->addChild(label);
 			pl->addChild(men, 16);
 
 			men->setPosition({34.f, 0.f});
 			men->setAnchorPoint({0.f, 0.f});
 			men->setScale(0.6f);
+			
 		}
 		TechnoGarageLayer::garage = this;
 		return true;
