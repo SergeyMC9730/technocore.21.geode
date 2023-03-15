@@ -53,6 +53,20 @@ class $modify(GameObjectHook, GameObject) {
 		return gd::string(dat);
 	}
 
+	#define PKINT 1
+	#define PKFLOAT 10
+	#define PARSE_KEY_PKINT(keyN, member) \
+		case keyN: {\
+			member = std::atoi(parsed); \
+			break; \
+		}
+	#define PARSE_KEY_PKFLOAT(keyN, member) \
+		case keyN: {\
+			member = std::stof(std::string(parsed)); \
+			break; \
+		}
+	#define PARSE_KEY(keyN, member, vType) PARSE_KEY_##vType(keyN, member)
+
 	static GameObject* objectFromString(gd::string a, bool b) {
 		auto object = GameObject::objectFromString(a, b);
 		if (!object) return object;

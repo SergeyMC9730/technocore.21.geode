@@ -12,6 +12,7 @@
 #include <Geode/modify/LevelSearchLayer.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/modify/GJGarageLayer.hpp>
+#include <Geode/modify/GameObject.hpp>
 #include "networking.h"
 
 #include <Geode/modify/MenuLayer.hpp>
@@ -29,6 +30,81 @@ using namespace cocos2d;
 namespace TechnoSettings {
 	bool release = false;
 }
+namespace TechnoGroups {
+	class TechnoPlayer {
+	public:
+		PlayerObject *m_pPl;
+		bool followPlayer;
+
+		TechnoPlayer() {}
+		TechnoPlayer(PlayerObject *pl) {
+			m_pPl = pl;
+		}
+	};
+
+	std::map<int, std::vector<TechnoPlayer *>> groups;
+	
+	std::vector<TechnoPlayer *> getPlayersFromGroup(int id) {
+		for (const auto & [groupID, players] : groups) {
+			if(groupID == id) return players;
+		}
+		return {};
+	}
+	
+	void clear() {
+		groups.clear();
+	}
+	
+	void assign(int id, TechnoPlayer *obj) {
+		if(getPlayersFromGroup(id).size() == 0) {
+			groups.insert(std::pair<int, std::vector<TechnoPlayer *>>(id, {obj}));
+			return;
+		} else {
+			int i = 0;
+			for (const auto & [groupID, players] : groups) {
+				if(groupID == id) groups.at(i).push_back(obj);
+				i++;
+			}
+		}
+	}
+	
+	void removePlayer(PlayerObject *obj) {
+		int ii = 0;
+		for (const auto & [groupID, players] : groups) {
+			int i = 0; // player_list.erase(player_list.begin() + id)
+			while(i < players.size()) {
+				if(players[i]->m_pPl == obj) {
+					groups.at(ii).erase(players.begin() + i);
+				}
+				i++;
+			}
+			ii++;
+		}
+	}
+
+	TechnoPlayer *plToTP(PlayerObject *po) {
+		for (const auto & [groupID, players] : groups) {
+			int i = 0;
+			while(i < players.size()) {
+				if(players[i]->m_pPl == po) {
+					return players[i];
+				}
+				i++;
+			}
+		}
+		return nullptr;
+	}
+
+	void eraseGroup(int id) {
+		int i = 0;
+		for (const auto & [groupID, players] : groups) {
+			if(groupID == id) {
+				groups.erase(groupID);
+			}
+			i++;
+		}
+	}
+}
 
 std::vector<PlayerObject *> player_list;
 bool isSetupComplete = false;
@@ -43,6 +119,7 @@ void destroyPlayers(bool onScreen) {
 		}
 	}
 	player_list.clear();
+	TechnoGroups::clear();
 }
 void syncPlayerSpeeds(float sp) {
 	int i = 0;
@@ -56,6 +133,20 @@ void syncPlayerX(float x) {
 	while(i < player_list.size()) {
 		player_list[i]->m_position.x = x;
 		player_list[i]->setPositionX(x);
+		i++;
+	}
+}
+void syncPlayerY(float y) {
+	int i = 0;
+	while(i < player_list.size()) {
+		if(TechnoGroups::plToTP(player_list[i])) {
+			if(TechnoGroups::plToTP(player_list[i])->followPlayer) {
+				player_list[i]->m_position.y = y;
+				player_list[i]->setPositionY(y);
+			}
+		} else {
+			if(!TechnoSettings::release) printf("WARN: Player is not inside techno groups!");
+		}
 		i++;
 	}
 }
@@ -75,6 +166,7 @@ void destroyPlayerByID(int id) {
 	player_list[id]->stopDashing();
 	player_list[id]->stopRotation(false);
 	player_list[id]->stopAllActions();
+	TechnoGroups::removePlayer(player_list[id]);
 	playPlayerDeathEffect(player_list[id]);
 	if(TechnoSettings::release == false) printf( "cleaning up\n");
 	player_list.erase(player_list.begin() + id);
@@ -101,6 +193,40 @@ class CreatePlayerTrigger : public GameObjectController {
 		return "edit_ePCreateBtn_001.png";
 	}
 
+	bool isFollowingPlayer() {
+		return getObject()->m_tintTrigger;
+	}
+	int getPlayerGroupID() {
+		return getObject()->m_targetColorID;
+	}
+
+	std::map<uint32_t, std::string> onExport() {
+		std::map<uint32_t, std::string> mp;
+
+		mp.insert(std::pair<uint32_t, std::string>(23, std::to_string(getObject()->m_targetColorID)));
+		mp.insert(std::pair<uint32_t, std::string>(120, std::to_string((int)getObject()->m_tintTrigger)));
+
+		return mp;
+	}
+	void onImport(std::map<uint32_t, std::string> data) {
+		for (const auto & [key, value] : data) {
+			switch(key) {
+				case 23: {
+					getObject()->m_targetColorID = std::stoi(value);
+					break;
+				}
+				case 120: {
+					getObject()->m_tintTrigger = bool(std::stoi(value));
+					break;
+				}
+			}
+		}
+	}
+
+	void onReset() override {
+		destroyPlayers(true);
+	}
+
 	// What happens when the object is "triggered"
 	void onTrigger(GJBaseGameLayer* gl) override {
 		// auto r = CCScaleTo::create(1.0, 1.25f, 0.75f);
@@ -120,6 +246,9 @@ class CreatePlayerTrigger : public GameObjectController {
 		}
 		CCPoint pos = this->getObject()->getPosition();
 		pos.x = gl->m_player1->getPositionX();
+		if(isFollowingPlayer()) {
+			pos.y = gl->m_player1->getPositionY();
+		}
 		po->setPosition(pos);
 		// po->addAllParticles();
 		// int particles = po->m_particleSystems->count();
@@ -136,6 +265,9 @@ class CreatePlayerTrigger : public GameObjectController {
 		// 	i++;
 		// }
 		player_list.push_back(po);
+		auto tpo = new TechnoGroups::TechnoPlayer(po);
+		tpo->followPlayer = isFollowingPlayer();
+		TechnoGroups::assign(getPlayerGroupID(), tpo);
 		if(TechnoSettings::release == false) printf( "created player %d\n", player_list.size() - 1);
 	}
 
@@ -152,6 +284,7 @@ class CreatePlayerTrigger : public GameObjectController {
 
 		if(PlayLayer::get()) {
 			m_object->setVisible(false);
+			m_object->setOpacity(255);
 		}
 	}
 };
@@ -164,12 +297,35 @@ class DestroyPlayersTrigger : public GameObjectController {
 		return "edit_ePDestroyBtn_001.png";
 	}
 
+	int getPlayerGroupID() {
+		return getObject()->m_targetColorID;
+	}
+
+	std::map<uint32_t, std::string> onExport() {
+		std::map<uint32_t, std::string> mp;
+
+		mp.insert(std::pair<uint32_t, std::string>(23, std::to_string(getObject()->m_targetColorID)));
+
+		return mp;
+	}
+	void onImport(std::map<uint32_t, std::string> data) {
+		for (const auto & [key, value] : data) {
+			switch(key) {
+				case 23: {
+					getObject()->m_targetColorID = std::stoi(value);
+					break;
+				}
+			}
+		}
+	}
+
 	// What happens when the object is "triggered"
 	void onTrigger(GJBaseGameLayer* gl) override {
 		int i = 0;
+		auto pls = TechnoGroups::getPlayersFromGroup(getPlayerGroupID());
 
-		while(i < player_list.size()) {
-			destroyPlayerByID(i);
+		while(i < pls.size()) {
+			destroyPlayerByAddress(pls[i]->m_pPl);
 			i++;
 		}
 	}
@@ -307,27 +463,31 @@ bool setupStuff() {
 
 void doPlayerJob(float delta) {
 	int i = 0;
+	float step = std::min(2.0f, delta * 60.0f); // took from opengd
+	delta = step;
 	while (i < player_list.size()) {
-		float dl = delta * 60.f;
-		printf("dl: %f; pspeed: %f; portal at %p\n", dl, player_list[i]->m_playerSpeed, GJBaseGameLayer::get()->m_player1->m_lastActivatedPortal);
-		player_list[i]->update(dl);
+		//printf("dl: %f; pspeed: %f; portal at %p\n", dl, player_list[i]->m_playerSpeed, GJBaseGameLayer::get()->m_player1->m_lastActivatedPortal);
+		player_list[i]->update(delta);
 		if(player_list[i]->m_isShip) {
-			player_list[i]->updateShipRotation(dl);
+			player_list[i]->updateShipRotation(delta);
 		} else if (player_list[i]->m_isBall) {
-			player_list[i]->runBallRotation(dl);
+			player_list[i]->runBallRotation(delta);
 		} else {
-			player_list[i]->updateRotation(dl);
+			player_list[i]->updateRotation(delta);
 		}
 		player_list[i]->updateRobotAnimationSpeed();
-		player_list[i]->updateJump(0);
+		//player_list[i]->updateJump(0);
 		player_list[i]->updatePlayerFrame(0);
 		player_list[i]->updatePlayerFrame(1);
 		if(PlayLayer::get()) {
-			PlayLayer::get()->checkCollisions(player_list[i], dl);
+			PlayLayer::get()->checkCollisions(player_list[i], delta);
 		} else {
-			LevelEditorLayer::get()->checkCollisions(player_list[i], dl);
+			LevelEditorLayer::get()->checkCollisions(player_list[i], delta);
 		}
-		player_list[i]->postCollision(dl);
+		if(TechnoGroups::plToTP(player_list[i]) && PlayLayer::get()) {
+			if(TechnoGroups::plToTP(player_list[i])->followPlayer) player_list[i]->setRotation( PlayLayer::get()->m_player1->getRotation());
+		}
+		player_list[i]->postCollision(delta);
 
 		i++;
 	}
@@ -362,8 +522,11 @@ class $modify(TPlayerObject, PlayerObject) {
 		if(PlayLayer::get()) {
 			if(this == PlayLayer::get()->m_player2) {
 				this->m_position.x = PlayLayer::get()->m_player1->m_position.x;
-				this->setPositionX(PlayLayer::get()->m_player1->getPositionX());
-			}
+			} /*else if (this == PlayLayer::get()->m_player1) {
+				if(!TechnoSettings::release) printf("DELTA PLAYER %f\n", delta);
+			} else {
+				if(!TechnoSettings::release) printf("DELTA DUMMY %f\n", delta);
+			}*/
 		}
 	}
 	void playerDestroyed(bool p0) {
@@ -414,8 +577,18 @@ class $modify(LevelEditorLayer) {
 	void update(float f) {
 		LevelEditorLayer::update(f);
 		syncPlayerSpeeds(this->m_player1->m_playerSpeed);
-		syncPlayerX(this->m_player1->m_position.x);
-		syncPlayerX(this->m_player1->getPositionX());
+		// syncPlayerX(this->m_player1->m_position.x);
+		int i = 0;
+		while(i < player_list.size()) {
+			if(TechnoGroups::plToTP(player_list[i])) {
+				if(TechnoGroups::plToTP(player_list[i])->followPlayer) {
+					syncPlayerY(this->m_player1->getPositionY());
+				}
+			} else {
+				if(!TechnoSettings::release) printf("WARN: Player is not inside techno groups!");
+			}
+			i++;
+		}
 		doPlayerJob(f);
 	}
 };
@@ -431,10 +604,19 @@ class $modify(TPlayLayer, PlayLayer) {
 		PlayLayer::update(f);
 		syncPlayerSpeeds(this->m_player1->m_playerSpeed);
 		syncPlayerX(this->m_player1->m_position.x);
-		syncPlayerX(this->m_player1->getPositionX());
 		if(this->m_player2) {
 			this->m_player2->m_position.x = this->m_player1->m_position.x;
-			this->m_player2->setPositionX(this->m_player2->getPositionX());
+		}
+		int i = 0;
+		while(i < player_list.size()) {
+			if(TechnoGroups::plToTP(player_list[i])) {
+				if(TechnoGroups::plToTP(player_list[i])->followPlayer) {
+					syncPlayerY(this->m_player1->m_position.y);
+				}
+			} else {
+				if(!TechnoSettings::release) printf("WARN: Player is not inside techno groups!");
+			}
+			i++;
 		}
 		doPlayerJob(f);
 	}
@@ -482,9 +664,6 @@ class $modify(CreatorLayer) {
 	}
 };
 
-
-
-
 namespace TechnoObjects {
 	std::vector<CCLayer *> selectorlayers;
 	CCPoint prevPos;
@@ -492,7 +671,6 @@ namespace TechnoObjects {
 
 	class TechnoObjectSelectorLayer : public CCLayer {
 	public:
-
 		static void createCustomObject(int id) {
 			auto lel = LevelEditorLayer::get();
 			CCPoint pos;
@@ -637,6 +815,278 @@ namespace TechnoObjects {
 
 		CREATE_FUNC(TechnoObjectSelectorLayer);
 	};
+	class CreatePlayerPopup : public CCLayer {
+	private:
+		CCTextInputNode *m_pInputPGID;
+		GameObject *m_pSelectedObject;
+
+		CCMenuItemToggler *m_pFollowPlayer;
+	public:
+		void onToggler1PressMaybe(CCObject *sender) {}
+
+		void onExitButton(CCObject *sender) {
+			int i = 0;
+			while(i < selectorlayers.size()) {
+				selectorlayers[i]->removeMeAndCleanup();
+				i++;
+			}
+			selectorlayers.clear();
+		}
+
+		bool init(GameObject *object) {
+			m_pSelectedObject = object;
+
+			CCLayer *objectSelector = CCLayer::create();
+			CCLayer *scale9layer = CCLayer::create();
+
+			CCScale9Sprite *spr1 = CCScale9Sprite::create("GJ_square01.png");
+			auto winsize = CCDirector::sharedDirector()->getWinSize();
+			//spr1->setAnchorPoint({0, 1});
+			spr1->setContentSize({winsize.width * 0.66666f, winsize.height * 0.66666f});
+
+			scale9layer->addChild(spr1);
+			objectSelector->addChild(scale9layer, 0);
+
+			scale9layer->setPosition({winsize.width / 2, winsize.height / 2});
+
+			auto bmf = CCLabelBMFont::create("Create Player Trigger", "bigFont.fnt");
+			bmf->setScale(0.5f);
+			bmf->setPositionX(winsize.width / 2);
+			bmf->setPositionY(winsize.height * 0.8f - 10);
+			
+			objectSelector->addChild(bmf, 1);
+
+			auto exitBtn = CCSprite::createWithSpriteFrameName("GJ_closeBtn_001.png");
+			auto btn3 = CCMenuItemSpriteExtra::create(
+				exitBtn, this, menu_selector(TechnoObjectSelectorLayer::onExitButton)
+			);
+
+			CCMenu *men2 = CCMenu::create();
+			CCMenu *men3 = CCMenu::create();
+			CCMenu *men1 = CCMenu::create();
+
+			men2->setPosition({
+				winsize.width * 0.20f,
+				winsize.height * 0.8f
+			});
+			men3->setPosition({
+				winsize.width * 0.27f,
+				winsize.height * 0.6f
+			});
+			men1->setPosition({
+				winsize.width * 0.27f,
+				winsize.height * 0.45f
+			});
+			men2->addChild(btn3);
+
+			objectSelector->addChild(men2, 2);
+
+			CCSprite *spr_square = CCSprite::create("square02_001.png");
+			spr_square->setOpacity(128);
+			spr_square->setScaleY(0.3f);
+
+			CCLabelBMFont *men3_info = CCLabelBMFont::create("Player Group ID", "bigFont.fnt");
+			men3_info->setAnchorPoint({0.5f, 0.5f});
+			men3_info->setScale(0.5f);
+			men3_info->setPositionX(134.f);
+
+			auto inputid = CCTextInputNode::create(32.f, 16.f, "0", "bigFont.fnt");
+			men3->addChild(inputid, 1);
+			men3->addChild(spr_square, 0);
+			men3->addChild(men3_info, 0);
+
+			CCSprite *checkOn = CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png");
+			CCSprite *checkOff = CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png");
+
+			m_pFollowPlayer = CCMenuItemToggler::create(checkOff, checkOn, this, menu_selector(CreatePlayerPopup::onToggler1PressMaybe));
+			CCLabelBMFont *men1_info = CCLabelBMFont::create("Follow Player", "bigFont.fnt");
+			men1_info->setAnchorPoint({0.5f, 0.5f});
+			men1_info->setScale(0.5f);
+			men1_info->setPositionX(100.f);
+
+			char *buffer = (char *)malloc(128);
+			char *currentGroupID = itoa(object->m_targetColorID, buffer, 10);
+			free(buffer);
+
+			inputid->setString(currentGroupID);
+
+			m_pInputPGID = inputid;
+
+			men1->addChild(m_pFollowPlayer, 0);
+			men1->addChild(men1_info, 1);
+
+			objectSelector->addChild(men1, 2);
+			objectSelector->addChild(men3, 2);
+
+			this->addChild(objectSelector);
+
+			auto base = CCSprite::create("square.png");
+			base->setPosition({ 0, 0 });
+			base->setScale(500.f);
+			base->setColor({0, 0, 0});
+			base->setOpacity(0);
+			base->runAction(CCFadeTo::create(0.3f, 125));
+
+			this->addChild(base, -1);
+
+			objectSelector->setScale(0.1f);
+			objectSelector->runAction(CCEaseElasticOut::create(CCScaleTo::create(0.5f, 1.0f), 0.6f));
+
+			selectorlayers.push_back(static_cast<CCLayer *>(this));
+
+			scheduleUpdate();
+
+			m_pFollowPlayer->toggle(object->m_tintTrigger);
+
+			return true;
+		}
+
+		void update(float delta) {
+			m_pSelectedObject->m_targetColorID = atoi(m_pInputPGID->getString());
+			if(m_pSelectedObject->m_targetColorID > 65 || m_pSelectedObject->m_targetColorID < 0) {
+				m_pSelectedObject->m_targetColorID = 64;
+			}
+			m_pSelectedObject->m_tintTrigger = m_pFollowPlayer->isToggled();
+			
+		}
+
+		static CreatePlayerPopup* create(GameObject *object) { 
+			CreatePlayerPopup* pRet = new CreatePlayerPopup(); 
+			if (pRet && pRet->init(object)) { 
+				pRet->autorelease();
+				return pRet;
+			} else {
+				delete pRet;
+				pRet = 0;
+				return 0; 
+			} 
+		}
+	};
+
+	class DestroyPlayersPopup : public CCLayer {
+	private:
+		CCTextInputNode *m_pInputPGID;
+		GameObject *m_pSelectedObject;
+	public:
+		void onToggler1PressMaybe(CCObject *sender) {}
+
+		void onExitButton(CCObject *sender) {
+			int i = 0;
+			while(i < selectorlayers.size()) {
+				selectorlayers[i]->removeMeAndCleanup();
+				i++;
+			}
+			selectorlayers.clear();
+		}
+
+		bool init(GameObject *object) {
+			m_pSelectedObject = object;
+
+			CCLayer *objectSelector = CCLayer::create();
+			CCLayer *scale9layer = CCLayer::create();
+
+			CCScale9Sprite *spr1 = CCScale9Sprite::create("GJ_square01.png");
+			auto winsize = CCDirector::sharedDirector()->getWinSize();
+			//spr1->setAnchorPoint({0, 1});
+			spr1->setContentSize({winsize.width * 0.66666f, winsize.height * 0.66666f});
+
+			scale9layer->addChild(spr1);
+			objectSelector->addChild(scale9layer, 0);
+
+			scale9layer->setPosition({winsize.width / 2, winsize.height / 2});
+
+			auto bmf = CCLabelBMFont::create("Destroy Players Trigger", "bigFont.fnt");
+			bmf->setScale(0.5f);
+			bmf->setPositionX(winsize.width / 2);
+			bmf->setPositionY(winsize.height * 0.8f - 10);
+			
+			objectSelector->addChild(bmf, 1);
+
+			auto exitBtn = CCSprite::createWithSpriteFrameName("GJ_closeBtn_001.png");
+			auto btn3 = CCMenuItemSpriteExtra::create(
+				exitBtn, this, menu_selector(TechnoObjectSelectorLayer::onExitButton)
+			);
+
+			CCMenu *men2 = CCMenu::create();
+			CCMenu *men3 = CCMenu::create();
+
+			men2->setPosition({
+				winsize.width * 0.20f,
+				winsize.height * 0.8f
+			});
+			men3->setPosition({
+				winsize.width * 0.27f,
+				winsize.height * 0.6f
+			});
+			men2->addChild(btn3);
+
+			objectSelector->addChild(men2, 2);
+
+			CCSprite *spr_square = CCSprite::create("square02_001.png");
+			spr_square->setOpacity(128);
+			spr_square->setScaleY(0.3f);
+
+			CCLabelBMFont *men3_info = CCLabelBMFont::create("Player Group ID", "bigFont.fnt");
+			men3_info->setAnchorPoint({0.5f, 0.5f});
+			men3_info->setScale(0.5f);
+			men3_info->setPositionX(134.f);
+
+			auto inputid = CCTextInputNode::create(32.f, 16.f, "0", "bigFont.fnt");
+			men3->addChild(inputid, 1);
+			men3->addChild(spr_square, 0);
+			men3->addChild(men3_info, 0);
+
+			char *buffer = (char *)malloc(128);
+			char *currentGroupID = itoa(object->m_targetColorID, buffer, 10);
+			free(buffer);
+
+			inputid->setString(currentGroupID);
+
+			m_pInputPGID = inputid;
+
+			objectSelector->addChild(men3, 2);
+
+			this->addChild(objectSelector);
+
+			auto base = CCSprite::create("square.png");
+			base->setPosition({ 0, 0 });
+			base->setScale(500.f);
+			base->setColor({0, 0, 0});
+			base->setOpacity(0);
+			base->runAction(CCFadeTo::create(0.3f, 125));
+
+			this->addChild(base, -1);
+
+			objectSelector->setScale(0.1f);
+			objectSelector->runAction(CCEaseElasticOut::create(CCScaleTo::create(0.5f, 1.0f), 0.6f));
+
+			selectorlayers.push_back(static_cast<CCLayer *>(this));
+
+			scheduleUpdate();
+
+			return true;
+		}
+
+		void update(float delta) {
+			m_pSelectedObject->m_targetColorID = atoi(m_pInputPGID->getString());
+			if(m_pSelectedObject->m_targetColorID > 129 || m_pSelectedObject->m_targetColorID < 0) {
+				m_pSelectedObject->m_targetColorID = 128;
+			}
+			
+		}
+
+		static DestroyPlayersPopup* create(GameObject *object) { 
+			DestroyPlayersPopup* pRet = new DestroyPlayersPopup(); 
+			if (pRet && pRet->init(object)) { 
+				pRet->autorelease();
+				return pRet;
+			} else {
+				delete pRet;
+				pRet = 0;
+				return 0; 
+			} 
+		}
+	};
 }
 
 namespace TechnoEditorUI {
@@ -705,6 +1155,27 @@ class $modify(TGJGarageLayer, GJGarageLayer) {
 };
 
 class $modify(TEditorUI, EditorUI) {
+	void editObject(CCObject *sender) {
+		
+		EditorUI *eui = EditorUI::get();
+		auto objects = eui->getSelectedObjects();
+		int i = 0;
+		while(i < objects->count()) {
+			GameObject *obj = static_cast<GameObject *>(objects->objectAtIndex(i));
+			if(obj->m_objectID == 10245) { // create player trigger
+				auto lel = LevelEditorLayer::get();
+				lel->m_editorUI->addChild(TechnoObjects::CreatePlayerPopup::create(obj), 999);
+				return;
+			} else if(obj->m_objectID == 10246) { // destroy players trigger
+				auto lel = LevelEditorLayer::get();
+				lel->m_editorUI->addChild(TechnoObjects::DestroyPlayersPopup::create(obj), 999);
+				return;
+			}
+			i++;
+		}
+		EditorUI::editObject(sender);
+	}
+
 	void on1024(CCObject *sender) {
 		auto lel = LevelEditorLayer::get();
 		lel->m_editorUI->addChild(TechnoObjects::TechnoObjectSelectorLayer::create(), 999);
