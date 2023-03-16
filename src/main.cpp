@@ -347,67 +347,67 @@ class DestroyPlayersTrigger : public GameObjectController {
 	}
 };
 
-// class MoveCamera : public GameObjectController {
-//  public:
-// 	MoveCamera(GameObject* g) : GameObjectController(g) {}
+class MoveCamera : public GameObjectController {
+ public:
+	MoveCamera(GameObject* g) : GameObjectController(g) {}
 
-// 	static const char *getTexture() {
-// 		return "edit_ePDestroyBtn_001.png";
-// 	}
+	static const char *getTexture() {
+		return "edit_ePDestroyBtn_001.png";
+	}
 
-// 	float getMoveDuration() {
-// 		return getObject()->m_animSpeed;
-// 	}
-// 	float getEaseType() {
-// 		return getObject()->m_targetColorID;
-// 	}
+	float getMoveDuration() {
+		return getObject()->m_animSpeed;
+	}
+	float getEaseType() {
+		return getObject()->m_targetColorID
+	}
 
-// 	std::map<uint32_t, std::string> onExport() {
-// 		std::map<uint32_t, std::string> mp;
+	std::map<uint32_t, std::string> onExport() {
+		std::map<uint32_t, std::string> mp;
 
-// 		mp.insert(std::pair<uint32_t, std::string>(200, std::to_string(getObject()->m_animSpeed)));
-// 		mp.insert(std::pair<uint32_t, std::string>(201, std::to_string(getObject()->m_targetColorID)));
+		mp.insert(std::pair<uint32_t, std::string>(200, std::to_string(getObject()->m_animSpeed)));
+		mp.insert(std::pair<uint32_t, std::string>(201, std::to_string(getObject()->m_targetColorID)));
 
-// 		return mp;
-// 	}
-// 	void onImport(std::map<uint32_t, std::string> data) {
-// 		for (const auto & [key, value] : data) {
-// 			switch(key) {
-// 				case 200: {
-// 					getObject()->m_animSpeed = std::stof(value);
-// 					break;
-// 				}
-// 			}
-// 		}
-// 	}
+		return mp;
+	}
+	void onImport(std::map<uint32_t, std::string> data) {
+		for (const auto & [key, value] : data) {
+			switch(key) {
+				case 200: {
+					getObject()->m_animSpeed = std::stof(value);
+					break;
+				}
+			}
+		}
+	}
 
-// 	// What happens when the object is "triggered"
-// 	void onTrigger(GJBaseGameLayer* gl) override {
-// 		int i = 0;
-// 		auto pls = TechnoGroups::getPlayersFromGroup(getPlayerGroupID());
+	// What happens when the object is "triggered"
+	void onTrigger(GJBaseGameLayer* gl) override {
+		int i = 0;
+		auto pls = TechnoGroups::getPlayersFromGroup(getPlayerGroupID());
 
-// 		while(i < pls.size()) {
-// 			destroyPlayerByAddress(pls[i]->m_pPl);
-// 			i++;
-// 		}
-// 	}
+		while(i < pls.size()) {
+			destroyPlayerByAddress(pls[i]->m_pPl);
+			i++;
+		}
+	}
 
-// 	void setup() override {
-// 		// Disable glow because there is no glow texture for this sprite
-// 		m_glowEnabled = false;
+	void setup() override {
+		// Disable glow because there is no glow texture for this sprite
+		m_glowEnabled = false;
 
-// 		// Set custom texture for this object
-// 		overrideSpriteFrame(getTexture());
+		// Set custom texture for this object
+		overrideSpriteFrame(getTexture());
 
-// 		// Touch-triggered object with the Modifier type. This object will run onTrigger when collided with
-// 		m_object->m_touchTriggered = true;
-// 		m_object->m_objectType = GameObjectType::Modifier;
+		// Touch-triggered object with the Modifier type. This object will run onTrigger when collided with
+		m_object->m_touchTriggered = true;
+		m_object->m_objectType = GameObjectType::Modifier;
 
-// 		if(PlayLayer::get()) {
-// 			m_object->setVisible(false);
-// 		}
-// 	}
-// };
+		if(PlayLayer::get()) {
+			m_object->setVisible(false);
+		}
+	}
+};
 
 class BoostPortal : public GameObjectController {
 protected:
@@ -1005,8 +1005,8 @@ namespace TechnoObjects {
 
 		void update(float delta) {
 			m_pSelectedObject->m_targetColorID = atoi(m_pInputPGID->getString());
-			if(m_pSelectedObject->m_targetColorID < 0) {
-				m_pSelectedObject->m_targetColorID = -m_pSelectedObject->m_targetColorID;
+			if(m_pSelectedObject->m_targetColorID > 65 || m_pSelectedObject->m_targetColorID < 0) {
+				m_pSelectedObject->m_targetColorID = 64;
 			}
 			m_pSelectedObject->m_tintTrigger = m_pFollowPlayer->isToggled();
 			
@@ -1131,8 +1131,8 @@ namespace TechnoObjects {
 
 		void update(float delta) {
 			m_pSelectedObject->m_targetColorID = atoi(m_pInputPGID->getString());
-			if(m_pSelectedObject->m_targetColorID < 0) {
-				m_pSelectedObject->m_targetColorID = -m_pSelectedObject->m_targetColorID;
+			if(m_pSelectedObject->m_targetColorID > 129 || m_pSelectedObject->m_targetColorID < 0) {
+				m_pSelectedObject->m_targetColorID = 128;
 			}
 			
 		}
