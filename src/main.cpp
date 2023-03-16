@@ -1131,8 +1131,8 @@ namespace TechnoObjects {
 
 		void update(float delta) {
 			m_pSelectedObject->m_targetColorID = atoi(m_pInputPGID->getString());
-			if(m_pSelectedObject->m_targetColorID > 129 || m_pSelectedObject->m_targetColorID < 0) {
-				m_pSelectedObject->m_targetColorID = 128;
+			if(m_pSelectedObject->m_targetColorID > 65 || m_pSelectedObject->m_targetColorID < 0) {
+				m_pSelectedObject->m_targetColorID = 64;
 			}
 			
 		}
